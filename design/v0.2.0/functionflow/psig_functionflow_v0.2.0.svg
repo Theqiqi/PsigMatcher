@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+  <text x="20" y="28" font-size="18" font-weight="bold">psig 功能流程图 v0.2.0（增量）</text>
+
+  <rect x="30" y="60" width="200" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="130" y="82" text-anchor="middle">ExportSignaturesCsv/Db</text>
+  <text x="130" y="100" text-anchor="middle">（写 templateText）</text>
+
+  <rect x="30" y="150" width="200" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="130" y="172" text-anchor="middle">ImportSignaturesCsv/Db</text>
+  <text x="130" y="190" text-anchor="middle">（读 templateText）</text>
+
+  <rect x="300" y="60" width="200" height="52" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="400" y="82" text-anchor="middle">EncodeTemplateRecord</text>
+  <text x="400" y="100" text-anchor="middle">#psig-template,escaped</text>
+
+  <rect x="300" y="150" width="200" height="52" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="400" y="172" text-anchor="middle">ParseTemplateRecord</text>
+  <text x="400" y="190" text-anchor="middle">(text→tmpl,rest)</text>
+
+  <rect x="580" y="60" width="180" height="52" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="670" y="82" text-anchor="middle">ResultColumnDefs</text>
+  <text x="670" y="100" text-anchor="middle">(key,title)×9</text>
+
+  <rect x="580" y="150" width="180" height="52" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="670" y="172" text-anchor="middle">FilterResultColumns</text>
+  <text x="670" y="190" text-anchor="middle">(keys→headers,rows)</text>
+
+  <rect x="800" y="105" width="160" height="52" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="880" y="127" text-anchor="middle">ExportResultsCsv/Db/Txt</text>
+  <text x="880" y="145" text-anchor="middle">(opt: tmpl+columns)</text>
+
+  <line x1="230" y1="86" x2="300" y2="86" stroke="#555" marker-end="url(#b)"/>
+  <line x1="230" y1="176" x2="300" y2="176" stroke="#555" marker-end="url(#b)"/>
+  <line x1="500" y1="86" x2="580" y2="86" stroke="#555" marker-end="url(#b)"/>
+  <line x1="500" y1="176" x2="580" y2="176" stroke="#555" marker-end="url(#b)"/>
+  <line x1="760" y1="86" x2="800" y2="120" stroke="#555" marker-end="url(#b)"/>
+  <line x1="760" y1="176" x2="800" y2="142" stroke="#555" marker-end="url(#b)"/>
+
+  <defs>
+    <marker id="b" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
