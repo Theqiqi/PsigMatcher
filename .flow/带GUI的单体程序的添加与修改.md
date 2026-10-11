@@ -28,7 +28,7 @@
 产物     : 根目录 .gitignore
 约束     : 必须参考现有 `.gitignore`（当前项目已有一份，覆盖 out、*.exe/*.lib/*.obj/*.log、.vs/、.idea/、vcpkg_installed、cmake-build-* 等），不得凭空重写；增补项按需：新增目录的产物（如新程序的 out/）、临时调试文件、截图/日志等；编写后执行 `git status --short` 确认被忽略文件不再出现在未跟踪列表
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 根目录 .gitignore 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：`.gitignore` 就绪后执行首次提交：`git add .gitignore && git commit -m "chore: 初始化 gitignore"`。
+完成标准 : 根目录 .gitignore 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：`.gitignore` 就绪后执行首次提交：`git add .gitignore && git commit -m "chore: init gitignore"`。
 
 ------
 ## 4. 确定版本号
@@ -39,7 +39,7 @@
 产物     : 本次流程的版本号（v<版本>）
 约束     : 版本号递增：新建程序从 v0.1.0；修改/添加功能在上一版本号 +1（v0.1.0 → v0.2.0）；版本号同一流程内不变；创建目录 `design/v<版本>/gui/` 与 `design/v<版本>/gproto/`；修改型流程从上一版本目录复制受影响文档，并在新版本目录创建/更新 `00_CHANGELOG.md` 记录「v<版本> = 上一版本 + 改动点清单」；已归档版本目录（如 design/v0.1.0/）不再原地修改；本次改动全部写入新版本目录
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 本次流程的版本号（v<版本>） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：目录与 CHANGELOG 就绪后提交：`git add design/ && git commit -m "chore: 初始化版本目录 v<版本>"`。
+完成标准 : 本次流程的版本号（v<版本>） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：目录与 CHANGELOG 就绪后提交：`git add design/ && git commit -m "chore: init version directory v<版本>"`。
 
 ------
 ## 5. 用 git 保存进度（基线提交）
@@ -48,7 +48,7 @@
 前置     : 已初始化的仓库、已就绪的 .gitignore
 解构     : 观察 [在进入流程步骤前把当前项目全量状态保存为基线提交 / 便于后续每步对照 diff]
 产物     : 基线提交（clean 工作区）
-约束     : 执行 `git add -A && git commit -m "chore: 基线进度"`（首次）或确认工作区已 clean（已有历史时）；提交后 `git status` 应显示 clean；若有未跟踪文件且不属于 .gitignore 应处理（纳入跟踪或补 .gitignore）；每个步骤完成后必须用 git 保存进度（步骤末尾「git 保存」行），不允许跨多个步骤才提交一次；提交信息格式建议：`类型: 内容`（chore/docs/feat/fix/test），与步骤名对应；修改模式沿用既有仓库历史；新建模式按「查看 git 内容」至「确定版本号」各步初始化后从基线提交开始；提交前可用 `git status --short` 确认只包含本步骤产物；误提交可用 `git reset --soft HEAD~1` 撤销（保留改动）
+约束     : 执行 `git add -A && git commit -m "chore: baseline progress"`（首次）或确认工作区已 clean（已有历史时）；提交后 `git status` 应显示 clean；若有未跟踪文件且不属于 .gitignore 应处理（纳入跟踪或补 .gitignore）；每个步骤完成后必须用 git 保存进度（步骤末尾「git 保存」行），不允许跨多个步骤才提交一次；提交信息格式：`type: content`（chore/docs/feat/fix/test），**内容用英文**，与步骤名对应；修改模式沿用既有仓库历史；新建模式按「查看 git 内容」至「确定版本号」各步初始化后从基线提交开始；提交前可用 `git status --short` 确认只包含本步骤产物；误提交可用 `git reset --soft HEAD~1` 撤销（保留改动）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 基线提交（clean 工作区） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：本步骤本身即提交；此后每个步骤末尾都必须再次 git 保存进度（见各步骤「git 保存」行）。
 
@@ -61,7 +61,7 @@
 产物     : 想法分析文档（design/v<版本>/ 下）
 约束     : 区分两种输入模式：；**新建程序**：想法描述一个全新程序 → 后续按 `.flow/带GUI的单体程序的GUI入口系统.md` 完整流程执行。；**修改/添加功能**：想法描述对现有程序的改动 → 后续仅执行受影响步骤，并在每个分析文档中标注「改动点」。；文档保存目录为 design/v<版本>/ 下（版本号在「确定版本号」步骤确定；新建程序写入 gui/，静态库相关写入 gproto/）；复用关系：新建程序：整体复用 `.flow/带GUI的单体程序的GUI入口系统.md`（GUI 流程）与 `.flow/带GUI的单体程序的业务系统静态库.md`（静态库流程）；修改/添加功能：复用上述流程中与改动相关的步骤（需求→设计→编码→审查→编译→测试），仅执行受影响部分
 排除项   : 不允许观看下面步骤内容
-完成标准 : 想法分析文档（design/v<版本>/ 下） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：想法分析文档落盘后提交：`git add design/ && git commit -m "docs: 想法收集"`。
+完成标准 : 想法分析文档（design/v<版本>/ 下） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：想法分析文档落盘后提交：`git add design/ && git commit -m "docs: idea collection"`。
 
 ------
 ## 7. 领域分析
@@ -72,7 +72,7 @@
 产物     : 领域模型文档
 约束     : 领域模型必须建模数据集合及其元素操作（查看/复制/编辑/删除/批量），作为交互模式设计依据；修改模式：对既有领域模型做增量更新，标注新增/修改/删除的集合与操作；修改模式：每个子步骤的输入输出同上，但聚焦改动点；与改动无关的既有内容不做重复分析，只引用既有文档；新建模式：完整执行本阶段全部子步骤（与 `.flow/带GUI的单体程序的GUI入口系统.md` 分析阶段一致）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 领域模型文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 领域分析"`。
+完成标准 : 领域模型文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: domain analysis"`。
 
 ------
 ## 8. 程序类型判断
@@ -83,7 +83,7 @@
 产物     : 程序类型分析文档
 约束     : 新建时按 GUI 判定标准（需可视化窗口/鼠标键盘交互/实时反馈/多控件协作）；修改模式：程序类型不变，不做重复判断，标注"沿用既有 GUI 类型"
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 程序类型分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 程序类型判断"`。
+完成标准 : 程序类型分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: program type determination"`。
 
 ------
 ## 9. 需求分析
@@ -94,7 +94,7 @@
 产物     : GUI需求分析文档、GUI功能列表与窗口定义文档
 约束     : 需求需包含窗口布局、用户操作路径（点击流程）、可视化反馈要求；修改模式：变更文档必须逐条列出「改动点 → 新增/修改/删除 → 影响窗口/功能」
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : GUI需求分析文档、GUI功能列表与窗口定义文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：需求文档落盘后提交：`git add design/ && git commit -m "docs: 需求分析"`。
+完成标准 : GUI需求分析文档、GUI功能列表与窗口定义文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：需求文档落盘后提交：`git add design/ && git commit -m "docs: requirements analysis"`。
 
 ------
 ## 10. 交互模式设计
@@ -105,7 +105,7 @@
 产物     : 交互模式设计文档
 约束     : 集合性质决定可写性与交互入口；可批量操作必须支持多选与批量执行；操作入口分级：高频全局→按钮；元素级→双击+右键；低频→菜单；修改模式：只重设计受改动影响的集合/窗口，其余引用既有文档
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 交互模式设计文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 交互模式设计"`。
+完成标准 : 交互模式设计文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: interaction mode design"`。
 
 ------
 ## 11. 状态与反馈信息设计
@@ -116,7 +116,7 @@
 产物     : 状态与反馈信息设计文档
 约束     : 三类反馈信息各自唯一显示位置；错误提示按短暂性错误/需决策错误分派弹窗或瞬时反馈；修改模式：新增功能产生的反馈信息点必须补齐设计，不得遗漏
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 状态与反馈信息设计文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 状态与反馈设计"`。
+完成标准 : 状态与反馈信息设计文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: state and feedback design"`。
 
 ------
 ## 12. 窗口结构分析
@@ -127,7 +127,7 @@
 产物     : 窗口层次结构与导航图、Qt Model/View数据绑定文档
 约束     : 使用 Qt 控件术语（QMainWindow、QWidget、QDockWidget、QTableView 等）；修改模式：只更新受影响窗口的层次/导航/绑定关系
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 窗口层次结构与导航图、Qt Model/View数据绑定文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 窗口结构分析"`。
+完成标准 : 窗口层次结构与导航图、Qt Model/View数据绑定文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: window structure analysis"`。
 
 ------
 ## 13. 功能流程分析
@@ -138,7 +138,7 @@
 产物     : GUI功能流程图、GUI执行路径文档
 约束     : 执行路径需包含正常路径、错误路径、取消路径（事件驱动独立路径）；修改模式：新增/修改功能的执行路径必须补全三类路径；含管理员权限前置时参照 design/v<版本>/gui/33_admin_capture_guide.md
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : GUI功能流程图、GUI执行路径文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 功能流程分析"`。
+完成标准 : GUI功能流程图、GUI执行路径文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: functional flow analysis"`。
 
 ------
 ## 14. 用户流程分析
@@ -149,7 +149,7 @@
 产物     : 用户流程文档
 约束     : 每个用户操作对应一个用户流程，覆盖正常/错误/取消路径；作为用户流程测试与 E2E 测试依据；修改模式：为改动点新增/更新对应用户流程，其余引用既有文档
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 用户流程文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 用户流程分析"`。
+完成标准 : 用户流程文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: user flow analysis"`。
 
 ------
 ## 15. 技术选型分析
@@ -160,7 +160,7 @@
 产物     : 技术选型分析文档
 约束     : 默认：C++20/Qt6::Widgets/Qt6::Concurrent/Windows/CMake/vcpkg；修改模式：确认既有技术栈仍满足，标注"沿用"，不重复分析
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 技术选型分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 技术选型分析"`。
+完成标准 : 技术选型分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: technology selection analysis"`。
 
 ------
 ## 16. API能力需求分析
@@ -171,7 +171,7 @@
 产物     : API能力需求文档
 约束     : 逐条列出改动点所需能力、期望公共 API、输入输出、异常要求、验收标准；已有 API 可覆盖 → 直接调用；无对应 API → 记入缺失能力，走静态库流程
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : API能力需求文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: API能力需求分析"`。
+完成标准 : API能力需求文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: API capability requirements"`。
 
 ------
 ## 17. 静态库存在性匹配
@@ -182,7 +182,7 @@
 产物     : API能力匹配分析文档
 约束     : 无静态库 → 生成缺失需求并进入「静态库流程调用」，触发 `.flow/带GUI的单体程序的业务系统静态库.md`；有静态库 → 继续 API 充分性审查；修改模式：仅当改动点需要新 API 或静态库能力不足时进入本阶段；能力已覆盖则跳过
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : API能力匹配分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 静态库存在性匹配"`。
+完成标准 : API能力匹配分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: static library existence match"`。
 
 ------
 ## 18. API充分性审查
@@ -193,7 +193,7 @@
 产物     : API能力审查结果
 约束     : 满足 → 继续 GUI 设计；不足 → 跳转静态库流程补充 API；ViewModel 直接调静态库 API；匹配对象只能是静态库公共 API，禁止用 OS API 充当能力提供方；禁止在 GUI 中自行实现缺失功能或编造数据
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : API能力审查结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：审查结论文档落盘后提交：`git add design/ && git commit -m "docs: API充分性审查"`。
+完成标准 : API能力审查结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：审查结论文档落盘后提交：`git add design/ && git commit -m "docs: API sufficiency review"`。
 
 ------
 ## 19. 缺失能力分析
@@ -204,7 +204,7 @@
 产物     : API缺失需求文档
 约束     : 逐项列出缺失能力、期望公共 API、输入输出、异常要求、验收标准
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : API缺失需求文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 缺失能力分析"`。
+完成标准 : API缺失需求文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: missing capability analysis"`。
 
 ------
 ## 20. 静态库流程调用
@@ -215,7 +215,7 @@
 产物     : 静态库需求变更文档、静态库流程交接记录
 约束     : 必须生成静态库流程交接记录，明确跳转目标为静态库流程的「跨流程需求接收」步骤；GUI 在静态库完成契约返回前停止 ViewModel 层编码，不得用模拟数据或假接口继续实现
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 静态库需求变更文档、静态库流程交接记录 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：交接记录落盘后提交：`git add design/ && git commit -m "docs: 静态库流程交接"`。
+完成标准 : 静态库需求变更文档、静态库流程交接记录 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：交接记录落盘后提交：`git add design/ && git commit -m "docs: static library handoff"`。
 
 ------
 ## 21. 静态库完成回退检查
@@ -226,7 +226,7 @@
 产物     : 更新后的API能力匹配分析文档
 约束     : 契约缺少公共头文件/API列表/库产物/能力覆盖结果 → 返回静态库流程对应步骤；仍有未覆盖能力 → 更新 API 缺失需求文档，跳回静态库流程；全部覆盖 → 继续 GUI 设计；不得在匹配完成前实现 ViewModel 层静态库调用
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 更新后的API能力匹配分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：匹配结果落盘后提交：`git add design/ && git commit -m "docs: 静态库完成回退检查"`。
+完成标准 : 更新后的API能力匹配分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：匹配结果落盘后提交：`git add design/ && git commit -m "docs: static library completion check"`。
 
 ------
 ## 22. 模块设计
@@ -237,7 +237,7 @@
 产物     : GUI模块分析文档
 约束     : GUI 分为 View/Model/ViewModel/静态库 4 层；View 层只画 UI 可单独编译；修改模式：标注改动涉及的层与文件，未涉及模块引用既有文档
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : GUI模块分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 模块设计"`。
+完成标准 : GUI模块分析文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: module design"`。
 
 ------
 ## 23. 职责和边界设计
@@ -248,7 +248,7 @@
 产物     : GUI职责和边界说明文档
 约束     : 每层定义清晰禁止项；View 不依赖 ViewModel/静态库；ViewModel 经 View* 指针操控 View
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : GUI职责和边界说明文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 职责和边界设计"`。
+完成标准 : GUI职责和边界说明文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: responsibility and boundary design"`。
 
 ------
 ## 24. 接口设计
@@ -259,7 +259,7 @@
 产物     : View层接口文档、Model层接口文档、ViewModel接口文档、静态库API调用映射文档、异常处理与错误显示策略文档
 约束     : View 头文件只依赖 Qt 和 Model 层；VM 经 View 公开 getter 读控件、公开方法更新 UI，不用 findChild 访问交互控件；main.cpp 流程固定：创建 View → 创建 ViewModel → viewModel->install(view) → show() → exec()；每个 VM 业务方法对应一个真实静态库 API 调用；无对应 API → 触发静态库流程；后台线程异常经信号/回调传递到主线程，不得跨线程抛异常
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : View层接口文档、Model层接口文档、ViewModel接口文档、静态库API调用映射文档、异常处理与错误显示策略文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：全部接口文档落盘后提交：`git add design/ && git commit -m "docs: 接口设计"`。
+完成标准 : View层接口文档、Model层接口文档、ViewModel接口文档、静态库API调用映射文档、异常处理与错误显示策略文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：全部接口文档落盘后提交：`git add design/ && git commit -m "docs: interface design"`。
 
 ------
 ## 25. 技术选型
@@ -270,7 +270,7 @@
 产物     : Qt技术选型文档
 约束     : 默认技术选型（程序类型 Windows 桌面 exe、C++20、Qt6、Qt6::Widgets+Qt6::Concurrent、vcpkg manifest、find_library 引用静态库产物）；静态库命名依据程序类型命名（不得命名为 pmem 等既有名称）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : Qt技术选型文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: Qt技术选型"`。
+完成标准 : Qt技术选型文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: Qt technology selection"`。
 
 ------
 ## 26. 代码规范
@@ -281,7 +281,7 @@
 产物     : Qt GUI代码规范文档
 约束     : View 只画 UI；View 可单独编译；VM 持 View 指针链接事件；Model 纯净；Q_OBJECT 宏；UI 线程不阻塞；后台不直接操作 UI；.qrc 管理资源；GUI 生产代码禁止平台 API/第三方库
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : Qt GUI代码规范文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 代码规范"`。
+完成标准 : Qt GUI代码规范文档 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: code conventions"`。
 
 ------
 ## 27. 创建文件夹结构（仅新建）
@@ -292,7 +292,7 @@
 产物     : src/view/、src/model/、src/viewmodel/、res/、test/unit|integration|target|e2e/
 约束     : 创建 src/view/、src/model/、src/viewmodel/、res/、test/ 各子目录；不允许创建文件；修改模式：跳过空壳/声明步骤，直接定位受影响的 .h/.cpp 按接口文档增量修改，保持既有分层与风格；新建模式：按 `.flow/带GUI的单体程序的GUI入口系统.md` 编码实现阶段执行（创建文件夹结构→空壳→声明→实现→资源→main）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : src/view/、src/model/、src/viewmodel/、res/、test/unit|integration|target|e2e/ 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：目录创建后提交：`git add gui/ && git commit -m "chore: 创建GUI目录结构"`。
+完成标准 : src/view/、src/model/、src/viewmodel/、res/、test/unit|integration|target|e2e/ 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：目录创建后提交：`git add gui/ && git commit -m "chore: create GUI directory structure"`。
 
 ------
 ## 28. 创建源文件空壳（仅新建）
@@ -303,7 +303,7 @@
 产物     : resources.qrc/main.cpp/各层头文件源文件/测试文件空壳
 约束     : 空壳不填充内容；VM 空壳必须含 Q_OBJECT 宏；View 头文件只依赖 Qt 与 Model 层
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : resources.qrc/main.cpp/各层头文件源文件/测试文件空壳 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：空壳文件落盘后提交：`git add gui/ && git commit -m "chore: GUI空壳文件"`。
+完成标准 : resources.qrc/main.cpp/各层头文件源文件/测试文件空壳 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：空壳文件落盘后提交：`git add gui/ && git commit -m "chore: GUI skeleton files"`。
 
 ------
 ## 29. 填充声明与接口
@@ -314,7 +314,7 @@
 产物     : 各层头文件声明
 约束     : 只写声明不写实现；只在 ViewModel 层添加静态库 API 头文件引用；槽函数在 public/private slots 区域
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 各层头文件声明 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：声明填充后提交：`git add gui/ && git commit -m "feat: 接口声明"`。
+完成标准 : 各层头文件声明 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：声明填充后提交：`git add gui/ && git commit -m "feat: interface declarations"`。
 
 ------
 ## 30. 填充实现
@@ -325,7 +325,7 @@
 产物     : 各层实现 + resources.qrc/.qss + main.cpp
 约束     : Model 最先实现且不含格式化逻辑；View 只画 UI 不调业务；VM 槽函数=校验→调静态库 API→更新 Model→View 刷新；耗时操作 QtConcurrent::run 异步；修改模式：只改动受影响文件，遵循既有实现风格
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 各层实现 + resources.qrc/.qss + main.cpp 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：实现完成并编译通过前先提交源码进度：`git add gui/ && git commit -m "feat: 实现<功能名>"`。
+完成标准 : 各层实现 + resources.qrc/.qss + main.cpp 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：实现完成并编译通过前先提交源码进度：`git add gui/ && git commit -m "feat: implement <feature name>"`。
 
 ------
 ## 31. View层审查
@@ -336,7 +336,7 @@
 产物     : design/v<版本>/gui/29_View层审查矩阵.md
 约束     : 修改模式：仅审查本次改动涉及的 view/ 文件对应的检查项，未涉及层在矩阵中标注「未受影响，跳过」；新建模式执行全部检查项（见 `.flow/带GUI的单体程序的GUI入口系统.md` 的 View层审查）。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层；else-if 链不额外计层；lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=View 不得 include viewmodel/* 与静态库头文件。View 特有：只负责创建控件/布局/样式、不含事件处理逻辑、不声明 signals/无 private slots；头文件只依赖 Qt 与 model/、可单独编译；页面独立成文件、mainwindow.cpp 只做骨架；经公开 getter/公开 UI 方法暴露
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 29_View层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 View 层并重审；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: 代码审查-View层"`。
+完成标准 : 29_View层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 View 层并重审；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: code review - View layer"`。
 
 ------
 ## 32. Model层审查
@@ -347,7 +347,7 @@
 产物     : design/v<版本>/gui/30_Model层审查矩阵.md
 约束     : 修改模式：仅审查本次改动涉及的 model/ 文件对应的检查项，未涉及层在矩阵中标注「未受影响，跳过」；新建模式执行全部检查项（见 `.flow/带GUI的单体程序的GUI入口系统.md` 的 Model层审查）。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层）；任一函数体 ≤80 行；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须标注理由）；单一职责；错误后提前 return；头文件越界=Model 不得 include view/ 或 viewmodel/。Model 特有：只管理数据、无业务/格式化逻辑、Model/View 契约正确（只读表 flags 不含 ItemIsEditable）、不 include 静态库头、不直接调用静态库 API
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 30_Model层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 Model 层并重审；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: 代码审查-Model层"`。
+完成标准 : 30_Model层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 Model 层并重审；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: code review - Model layer"`。
 
 ------
 ## 33. ViewModel层审查
@@ -358,7 +358,7 @@
 产物     : design/v<版本>/gui/31_ViewModel层审查矩阵.md
 约束     : 修改模式：仅审查本次改动涉及的 viewmodel/ 文件对应的检查项，未涉及层在矩阵中标注「未受影响，跳过」；新建模式执行全部检查项（见 `.flow/带GUI的单体程序的GUI入口系统.md` 的 ViewModel层审查）。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层）；任一函数体 ≤80 行；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须标注理由）；单一职责；错误后提前 return；头文件越界=VM 不得 include view/*.cpp 内部实现。ViewModel 特有：持 View*/Model* 经 getter 读控件、不 findChild；connect 集中在 install()/bind*；耗时操作 QtConcurrent::run 且主线程无 QThread::wait()；后台异常经信号回主线程；QObject 生命周期正确；指针 nullptr 保护；parent-child 正确无泄漏
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 31_ViewModel层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 ViewModel 层并重审；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: 代码审查-ViewModel层"`。
+完成标准 : 31_ViewModel层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 ViewModel 层并重审；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: code review - ViewModel layer"`。
 
 ------
 ## 34. 静态库调用层审查
@@ -369,7 +369,7 @@
 产物     : design/v<版本>/gui/32_静态库调用层审查矩阵.md
 约束     : 修改模式：仅审查本次改动涉及的静态库调用点，未涉及在矩阵中标注「未受影响，跳过」；新建模式执行全部检查项（见 `.flow/带GUI的单体程序的GUI入口系统.md` 的 静态库调用层审查）。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层）；任一函数体 ≤80 行；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须标注理由）；单一职责；错误后提前 return；头文件越界=只经公共头调用。静态库特有：API 真实性=每个被调用符号可在 psig/include/psig.h 或 API 能力匹配文档中逐字命中，无编造符号；隔离性=静态库源码不引用任何 Qt 头、GUI 只经公开 API 调用、不直接 include/触碰 psig/src/*；真实数据来源=生产代码无 mock/fake/dummy/sample、无写死结果、无模拟成功路径，测试专用值仅存在于测试 target；无重复实现=静态库已有 API 时不得自行实现同等功能
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 32_静态库调用层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回 API 充分性审查或实现 ViewModel 层；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: 代码审查-静态库调用层"`。
+完成标准 : 32_静态库调用层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回 API 充分性审查或实现 ViewModel 层；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: code review - static library call layer"`。
 
 ------
 ## 35. 横切审查
@@ -380,7 +380,7 @@
 产物     : design/v<版本>/gui/33_横切审查结果.md
 约束     : 修改模式：仅审查受影响项（改动 main.cpp 才审入口职责、改动界面才审布局交互、新增目录/构建配置才审结构规范、改动测试才审测试层级），未涉及项逐条标注「未受影响，跳过」，不得默认略过；新建模式执行全部横切项（见 `.flow/带GUI的单体程序的GUI入口系统.md` 的 入口与全局架构审查、布局与交互合理性审查、结构与目录规范审查、测试层级与非空审查）。入口：main() 只创建对象+install+show+exec、绑定方向 View→VM→Model；依赖：无平台 API、无 Qt 以外第三方库；资源：.qrc 路径一致；目录：gui/ 与静态库目录平级、根目录无构建配置/产物、三方依赖走各项目 vcpkg manifest、#include 无 ../ 相对路径；测试：集成不跳层、e2e 独立真实、CMakeLists 注册真实用例
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 33_横切审查结果 产出且 约束 逐条 满足；不符 → 跳回对应步骤；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: 代码审查-横切"`。
+完成标准 : 33_横切审查结果 产出且 约束 逐条 满足；不符 → 跳回对应步骤；产物 落盘后 执行 git 保存：`git add design/ && git commit -m "docs: code review - cross-cutting"`。
 
 ------
 ## 36. 配置构建系统（仅新建）
@@ -391,7 +391,7 @@
 产物     : gui/CMakeLists.txt、src/test 各子 CMakeLists.txt、gui/CMakePresets.json
 约束     : 根 CMakeLists 只保留 project/公共选项/四个 add_subdirectory 入口；输出目录在预设 cacheVariables 声明（out/bin、out/lib）；Debug 动态运行库 /MDd、Release 静态 /MT
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : gui/CMakeLists.txt、src/test 各子 CMakeLists.txt、gui/CMakePresets.json 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：构建配置落盘后提交：`git add gui/ && git commit -m "chore: 构建系统配置"`。
+完成标准 : gui/CMakeLists.txt、src/test 各子 CMakeLists.txt、gui/CMakePresets.json 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：构建配置落盘后提交：`git add gui/ && git commit -m "chore: build system configuration"`。
 
 ------
 ## 37. 分析编译环境与包管理
@@ -402,7 +402,7 @@
 产物     : 编译环境需求文档、包管理选型结果
 约束     : 生成器只允许 Ninja、工具链只允许 MSVC；Qt6 独立安装不纳入 vcpkg manifest；gtest 走 vcpkg manifest（x64-windows / x64-windows-static 与运行时匹配）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 编译环境需求文档、包管理选型结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: 编译环境分析"`。
+完成标准 : 编译环境需求文档、包管理选型结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：文档落盘后提交：`git add design/ && git commit -m "docs: build environment analysis"`。
 
 ------
 ## 38. 编写编译脚本
@@ -413,7 +413,7 @@
 产物     : gui/script/build_debug.bat、build_release.bat、build_debug_wsl.sh、build_release_wsl.sh、脚本分类管理
 约束     : WSL→cmd.exe→.bat→MSVC(cl.exe)；bat 需设 VCPKG_ROOT、调 vcvars64、设置 QT6_DEBUG_DIR/QT6_RELEASE_DIR 兜底值；新增脚本必须归入四类并同步 gui/script/README.md
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : gui/script/build_debug.bat、build_release.bat、build_debug_wsl.sh、build_release_wsl.sh、脚本分类管理 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：脚本落盘后提交：`git add gui/ && git commit -m "chore: 编译脚本"`。
+完成标准 : gui/script/build_debug.bat、build_release.bat、build_debug_wsl.sh、build_release_wsl.sh、脚本分类管理 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：脚本落盘后提交：`git add gui/ && git commit -m "chore: build scripts"`。
 
 ------
 ## 39. 执行编译
@@ -424,7 +424,7 @@
 产物     : 编译产物（Debug/Release）
 约束     : 编译失败 → 修复脚本/配置后重试（不是改编译环境）；产物输出到 out/bin、out/lib
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 编译产物（Debug/Release） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：编译通过后提交源码修复（如有）：`git add gui/ && git commit -m "fix: 编译通过"`。
+完成标准 : 编译产物（Debug/Release） 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：编译通过后提交源码修复（如有）：`git add gui/ && git commit -m "fix: build passes"`。
 
 ------
 ## 40. 配置测试框架与测试目标
@@ -435,7 +435,7 @@
 产物     : test 各 CMakeLists.txt、test/target/main.cpp
 约束     : gtest main 不允许自写入口；target 不链接静态库、关闭 ASLR、输出 PID 行供驱动解析；修改模式：新增功能必须补对应单元/集成/用户流程/E2E 用例并回归；既有用例全量回归；新建模式：按 `.flow/带GUI的单体程序的GUI入口系统.md` 测试阶段全量执行
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : test 各 CMakeLists.txt、test/target/main.cpp 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试配置落盘后提交：`git add gui/ && git commit -m "chore: 测试框架配置"`。
+完成标准 : test 各 CMakeLists.txt、test/target/main.cpp 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试配置落盘后提交：`git add gui/ && git commit -m "chore: test framework configuration"`。
 
 ------
 ## 41. 编写并执行单元测试
@@ -446,7 +446,7 @@
 产物     : test/unit 各测试文件、单元测试结果
 约束     : QSignalSpy 监控信号；QTimer::singleShot 关闭 QMessageBox 弹窗；全部通过→继续，失败→修复重试
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : test/unit 各测试文件、单元测试结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试代码落盘后提交：`git add gui/ && git commit -m "test: 单元测试"`；执行通过后 `git commit -am "test: 单元测试通过"`。
+完成标准 : test/unit 各测试文件、单元测试结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试代码落盘后提交：`git add gui/ && git commit -m "test: unit tests"`；执行通过后 `git commit -am "test: unit tests pass"`。
 
 ------
 ## 42. 编写并执行集成/用户流程测试
@@ -457,7 +457,7 @@
 产物     : test/integration 测试文件、集成/用户流程测试结果
 约束     : 使用真实静态库数据验证业务流程真实完成；覆盖正常/异常流程；涉及真实抓包的用例需管理员令牌（Windows `RunAs` 提权；WSL `sudo`/`setcap`/`wsl -u root`），否则按环境跳过，详见 design/v<版本>/gui/33_admin_capture_guide.md
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : test/integration 测试文件、集成/用户流程测试结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试代码落盘后提交：`git add gui/ && git commit -m "test: 集成/用户流程测试"`。
+完成标准 : test/integration 测试文件、集成/用户流程测试结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试代码落盘后提交：`git add gui/ && git commit -m "test: integration / user flow tests"`。
 
 ------
 ## 43. 编写并执行E2E测试
@@ -468,7 +468,7 @@
 产物     : E2E测试结果
 约束     : 驱动用 Win32 PostMessage 注入、SetProcessDPIAware、截客户区、KEYUP 置位释放沿；断言逐场景按像素统计；执行脚本顺序固定 清理→启动→驱动→关闭→分析；真实抓包类用例需管理员令牌：GUI 与驱动脚本经 `Start-Process -Verb RunAs` 提权（UAC 弹窗点「是」后即可用），日常启动用 gui/script/run_gui_admin.bat；无权限时抓包类用例标记"环境跳过"如实报告
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : E2E测试结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试脚本落盘后提交：`git add gui/ && git commit -m "test: E2E测试"`。
+完成标准 : E2E测试结果 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：测试脚本落盘后提交：`git add gui/ && git commit -m "test: E2E tests"`。
 
 ------
 ## 44. 清理测试环境
@@ -490,7 +490,7 @@
 产物     : 根目录无散落产物
 约束     : 根目录出现 *.obj/*.exe/*.lib/*.log/*.pdb 等散落产物、CMakeLists/CMakePresets、script/、out/、third_party/、共享 workspace/ → 删除或移入所属项目子目录；清理后依次执行项目自包含/根目录配置隔离/构建产物归属/三方依赖归属/跨项目依赖/独立子目录检查
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
-完成标准 : 根目录无散落产物 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：清理后提交：`git add -A && git commit -m "chore: 清理目录"`。
+完成标准 : 根目录无散落产物 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：清理后提交：`git add -A && git commit -m "chore: clean directory"`。
 
 ------
 ## 46. 最终进度保存
@@ -510,6 +510,6 @@
 前置     : 「最终进度保存」的最终提交、「确定版本号」步骤确定的版本号
 解构     : 观察 [全流程完成后给最终提交打上版本 tag / 代码与设计文档以同一版本号归档]
 产物     : git tag v<版本>
-约束     : 使用带注释的 tag：`git tag -a v<版本> -m "v<版本>: <本版改动摘要>"`；tag 名与「确定版本号」步骤的版本号、design/v<版本>/ 目录一一对应；修改型流程在上一版本 tag 基础上打新 tag；打 tag 后 `git tag -l` 确认；如发现遗漏提交，修正后重新打 tag（删除旧 tag 用 `git tag -d v<版本>` 后重打）
+约束     : 使用带注释的 tag：`git tag -a v<版本> -m "v<版本>: <release summary>"`；tag 名与「确定版本号」步骤的版本号、design/v<版本>/ 目录一一对应；修改型流程在上一版本 tag 基础上打新 tag；打 tag 后 `git tag -l` 确认；如发现遗漏提交，修正后重新打 tag（删除旧 tag 用 `git tag -d v<版本>` 后重打）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : git tag v<版本> 产出且 约束 逐条 满足；产物 落盘后 执行 git 保存：本步骤即打 tag，完成后整个流程结束（后续如需发布，tag 即发布点）。
