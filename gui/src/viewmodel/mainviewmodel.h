@@ -108,7 +108,6 @@ private:
     QFutureWatcher<std::vector<psig::MatchResult>>* m_scanWatcher = nullptr;
     std::atomic_bool m_cancel{false};          // 扫描取消标志（资源句柄）
     std::shared_ptr<std::atomic_bool> m_alive; // 图标后台任务存活标志
-    std::string m_lastError;                   // 后台任务错误（回主线程读取）
 
     QString m_templateText;                    // 表级模板文本（文档级）
     QStringList m_exportColumns;               // 选中导出列键（空 = 全部）

@@ -63,7 +63,14 @@ set(GUI_MODEL_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/model/resulttablemodel.cpp
 )
 set(GUI_VM_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/viewmodel_helpers.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel_bind.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel_process.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel_signature.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel_scan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel_result.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/mainviewmodel_language.cpp
 )
 
 enable_testing()
