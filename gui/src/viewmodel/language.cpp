@@ -1,4 +1,4 @@
-// viewmodel/mainviewmodel_language.cpp - ViewModel：语言切换（装载翻译器 + 重译界面）
+// viewmodel/language.cpp - ViewModel：语言切换（装载翻译器 + 重译界面）
 #include "viewmodel/mainviewmodel.h"
 
 #include <QApplication>

@@ -1,11 +1,11 @@
 // viewmodel/mainviewmodel.cpp - ViewModel 核心：构造/装配/状态与日志
 // 说明：MainViewModel 按功能域拆分为多个 partial 实现文件（同一声明 mainviewmodel.h）：
-//   mainviewmodel_bind.cpp      —— bind* 装配与初始列
-//   mainviewmodel_process.cpp   —— 进程枚举/筛选/选中/重选/图标
-//   mainviewmodel_signature.cpp —— 特征码增删/列管理/导入导出
-//   mainviewmodel_scan.cpp      —— 扫描启动/取消/完成
-//   mainviewmodel_result.cpp    —— 结果导出/列选择/填充/清空/关于
-//   mainviewmodel_language.cpp  —— 语言切换
+//   bind.cpp      —— bind* 装配与初始列
+//   process.cpp   —— 进程枚举/筛选/选中/重选/图标
+//   signature.cpp —— 特征码增删/列管理/导入导出
+//   scan.cpp      —— 扫描启动/取消/完成
+//   result.cpp    —— 结果导出/列选择/填充/清空/关于
+//   language.cpp  —— 语言切换
 #include "viewmodel/mainviewmodel.h"
 
 #include <QMenu>

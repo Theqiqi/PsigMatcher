@@ -1,4 +1,4 @@
-// viewmodel/mainviewmodel_signature.cpp - ViewModel：特征码表增删/列管理/导入导出
+// viewmodel/signature.cpp - ViewModel：特征码表增删/列管理/导入导出
 #include "viewmodel/mainviewmodel.h"
 
 #include <QFileDialog>

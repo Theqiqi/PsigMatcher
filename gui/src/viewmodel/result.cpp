@@ -1,4 +1,4 @@
-// viewmodel/mainviewmodel_result.cpp - ViewModel：结果导出/列选择/填充/清空/关于
+// viewmodel/result.cpp - ViewModel：结果导出/列选择/填充/清空/关于
 #include "viewmodel/mainviewmodel.h"
 
 #include <QDialog>

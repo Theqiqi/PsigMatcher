@@ -1,4 +1,4 @@
-// viewmodel/mainviewmodel_process.cpp - ViewModel：进程枚举/筛选/选中/重选/图标
+// viewmodel/process.cpp - ViewModel：进程枚举/筛选/选中/重选/图标
 #include "viewmodel/mainviewmodel.h"
 
 #include <QFileDialog>

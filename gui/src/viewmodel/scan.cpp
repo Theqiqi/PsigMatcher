@@ -1,4 +1,4 @@
-// viewmodel/mainviewmodel_scan.cpp - ViewModel：扫描启动/取消/完成与模式收集
+// viewmodel/scan.cpp - ViewModel：扫描启动/取消/完成与模式收集
 #include "viewmodel/mainviewmodel.h"
 
 #include <QtConcurrent>

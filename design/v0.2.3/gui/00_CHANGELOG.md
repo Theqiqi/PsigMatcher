@@ -31,8 +31,10 @@
 | R-05 | data 层去 WinAPI：`WideToUtf8`/`Utf8ToWide` 由 `data/codec` 下沉至新增 `atomic/win_encoding`（`data/` 变为纯 std，无 `windows.h`） | 重构（审查发现） | `psig/src/data/codec.*`、`psig/src/atomic/win_encoding.*` |
 | R-06 | View `buildMenuAndToolbar`（113 行）拆为 `createActions`/`applyActionIconsAndShortcuts`/`buildMenus`/`buildToolbar` | 重构（审查发现） | `gui/src/view/mainwindow.{h,cpp}` |
 | R-07 | algorithm `SplitLine` 控制流 4 层 → 3 层（`continue` 提前返回重构） | 重构（审查发现） | `psig/src/algorithm/csv.cpp` |
+| R-08 | ViewModel 拆分文件命名规范化：`mainviewmodel_<域>.cpp` → `<域>.cpp`（去类名前缀），并在 `28_QtGUI代码规范.md` 补「单类多文件拆分命名」规则；`31_ViewModel层审查矩阵` 补「文件名与类名一致」检查行（此前遗漏） | 重构 + 文档（评审发现） | `gui/src/viewmodel/*`、`gui/CMakeLists.txt`、`design/v0.2.3/gui/28_QtGUI代码规范.md` |
 
 > **R-05/R-06/R-07 的由来**：v0.2.3 首次以新的**量化标准**（嵌套 ≤3 / 函数体 ≤80 / 文件 ≤400）审查各层，命中 3 处历史遗留违规。这是新审查机制**实际命中**的实证，非计划内改动，特此单列。
+> **R-08 的由来**：v0.2.3 交付后复评发现——代码规范文档（`design/v0.1.0/gui/28_QtGUI代码规范.md:33`）已要求「每个类一对 .h/.cpp，文件名与类名一致」，而 R-03 的拆分文件 `mainviewmodel_<域>.cpp` 违反之；且 `31_ViewModel层审查矩阵` 未收录该检查项。本次补文档规则 + 改名 + 补矩阵行。
 > 全仓扫描（`gui/src` + `psig/src`）确认：修复后无任何函数 >80 行、无任何函数控制流 >3 层、无任何源文件 >400 行。
 
 ## 三、流程文档同步修正（前置 chore，先于代码重构）

@@ -1,4 +1,4 @@
-// viewmodel/mainviewmodel_bind.cpp - ViewModel：控件/动作装配（bind*）与初始列
+// viewmodel/bind.cpp - ViewModel：控件/动作装配（bind*）与初始列
 #include "viewmodel/mainviewmodel.h"
 
 #include <QAction>
