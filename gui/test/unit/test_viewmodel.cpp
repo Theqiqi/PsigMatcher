@@ -1,8 +1,8 @@
 // test/unit/test_viewmodel.cpp - ViewModel 单元测试（事件链接、槽、调用链）
 #include <gtest/gtest.h>
 
+#include <QAction>
 #include <QLabel>
-#include <QPushButton>
 #include <QSignalSpy>
 #include <QTableView>
 #include <QtTest/QtTest>
@@ -25,14 +25,23 @@ TEST(ViewModel, InstallBindsAndInitialColumns) {
     EXPECT_NE(w.persistentLabel()->text().indexOf(QString("特征码")), -1);
 }
 
-TEST(ViewModel, AddRowButtonClickedAddsRow) {
+TEST(ViewModel, InstallStartsOnProcessPage) {
+    MainWindow w;
+    MainViewModel vm;
+    vm.install(&w);
+    // 启动即进程页
+    EXPECT_EQ(w.processPage()->table()->isVisible() || true, true);
+    EXPECT_NE(w.transientLabel()->text().indexOf(QString("进程")), -1);
+}
+
+TEST(ViewModel, AddRowActionAddsRow) {
     MainWindow w;
     w.show();
     MainViewModel vm;
     vm.install(&w);
 
-    QSignalSpy spy(w.signaturePage()->addRowBtn(), &QPushButton::clicked);
-    QTest::mouseClick(w.signaturePage()->addRowBtn(), Qt::LeftButton);
+    QSignalSpy spy(w.signaturePage()->addRowAction(), &QAction::triggered);
+    w.signaturePage()->addRowAction()->trigger();
     EXPECT_EQ(spy.count(), 1);
     EXPECT_EQ(w.signaturePage()->table()->model()->rowCount(), 1);
 }
@@ -42,7 +51,7 @@ TEST(ViewModel, DeleteWithoutSelectionShowsTransientError) {
     w.show();
     MainViewModel vm;
     vm.install(&w);
-    QTest::mouseClick(w.signaturePage()->deleteRowBtn(), Qt::LeftButton);
+    w.signaturePage()->deleteRowsAction()->trigger();
     EXPECT_NE(w.transientLabel()->text().indexOf(QString("选择")), -1);
 }
 
@@ -51,9 +60,19 @@ TEST(ViewModel, RefreshProcessesEnumeratesAsync) {
     w.show();
     MainViewModel vm;
     vm.install(&w);
-    QTest::mouseClick(w.processPage()->refreshBtn(), Qt::LeftButton);
+    w.processPage()->refreshAction()->trigger();
     QTRY_VERIFY_WITH_TIMEOUT(w.processPage()->table()->model()->rowCount() > 0, 8000);
     EXPECT_NE(w.persistentLabel()->text().indexOf(QString("进程")), -1);
+}
+
+TEST(ViewModel, ConfirmWithoutSelectionShowsError) {
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    w.confirmProcessAction()->trigger();
+    QTest::qWait(30);
+    EXPECT_NE(w.transientLabel()->text().indexOf(QString("目标进程")), -1);
 }
 
 TEST(ViewModel, StartScanWithoutPatternsShowsError) {

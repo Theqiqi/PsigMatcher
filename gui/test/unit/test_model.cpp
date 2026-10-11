@@ -67,8 +67,34 @@ TEST(ResultTableModel, SetAndFormat) {
     r.hitTime = "2026-10-11T12:00:00";
     m.setResults({r});
     ASSERT_EQ(m.rowCount(), 1);
+    EXPECT_EQ(m.columnCount(), 10);
     EXPECT_EQ(m.data(m.index(0, 0)).toString(), QString("p1"));
-    EXPECT_EQ(m.data(m.index(0, 3)).toString(), QString("0x140001000"));
+    EXPECT_EQ(m.data(m.index(0, 3)).toString(), QString("5368713216")); // 地址(十进制)
+    EXPECT_EQ(m.data(m.index(0, 4)).toString(), QString("0x140001000")); // 地址(十六进制)
     m.clear();
     EXPECT_EQ(m.rowCount(), 0);
+}
+
+TEST(ResultTableModel, CustomColumnEditable) {
+    ResultTableModel m;
+    m.setResults({ResultRow{}});
+    const int col = ResultTableModel::customColumn();
+    EXPECT_EQ(col, 9);
+    EXPECT_TRUE(m.flags(m.index(0, col)) & Qt::ItemIsEditable);
+    EXPECT_FALSE(m.flags(m.index(0, 0)) & Qt::ItemIsEditable);
+    EXPECT_TRUE(m.setData(m.index(0, col), QStringLiteral("备注"), Qt::EditRole));
+    EXPECT_EQ(m.data(m.index(0, col)).toString(), QStringLiteral("备注"));
+    // 非自定义列不可编辑
+    EXPECT_FALSE(m.setData(m.index(0, 0), QStringLiteral("x"), Qt::EditRole));
+}
+
+TEST(ResultTableModel, RemoveAndSetCustom) {
+    ResultTableModel m;
+    m.setResults({ResultRow{}, ResultRow{}, ResultRow{}});
+    ASSERT_EQ(m.rowCount(), 3);
+    m.setCustom({0, 2}, QStringLiteral("批量"));
+    EXPECT_EQ(m.data(m.index(0, ResultTableModel::customColumn())).toString(), QStringLiteral("批量"));
+    EXPECT_EQ(m.data(m.index(2, ResultTableModel::customColumn())).toString(), QStringLiteral("批量"));
+    m.removeRows({0, 2});
+    EXPECT_EQ(m.rowCount(), 1);
 }
