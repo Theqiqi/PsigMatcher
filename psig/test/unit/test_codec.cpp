@@ -42,3 +42,23 @@ TEST(NowIso8601, Format) {
     EXPECT_EQ(s[4], '-');
     EXPECT_EQ(s[10], 'T');
 }
+
+TEST(CellsCodec, RoundTrip) {
+    std::vector<std::string> cells = {"hello", "", "abc", "中文"};
+    std::vector<std::string> out;
+    ASSERT_TRUE(DecodeCells(EncodeCells(cells), out));
+    EXPECT_EQ(cells, out);
+}
+
+TEST(CellsCodec, EmptyList) {
+    std::vector<std::string> out;
+    EXPECT_TRUE(DecodeCells(EncodeCells({}), out));
+    EXPECT_TRUE(out.empty());
+}
+
+TEST(CellsCodec, InvalidInput) {
+    std::vector<std::string> out;
+    EXPECT_FALSE(DecodeCells("5:ab", out));  // 长度超出文本
+    EXPECT_FALSE(DecodeCells("x:ab", out));  // 长度非数字
+    EXPECT_FALSE(DecodeCells("5abc", out));  // 缺冒号
+}

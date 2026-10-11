@@ -15,7 +15,10 @@ add_library(psig STATIC
     atomic/win_icon.cpp
     atomic/file_io.cpp
     atomic/sqlite_io.cpp
-    api/psig.cpp
+    api/process_scan.cpp
+    api/pattern_api.cpp
+    api/exchange_signatures.cpp
+    api/exchange_results.cpp
     ${PSIG_SQLITE_SRC}
 )
 

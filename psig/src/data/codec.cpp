@@ -77,4 +77,33 @@ std::wstring Utf8ToWide(const std::string& s) {
     return w;
 }
 
+std::string EncodeCells(const std::vector<std::string>& cells) {
+    std::string out;
+    for (const auto& c : cells) {
+        out += std::to_string(c.size());
+        out.push_back(':');
+        out += c;
+    }
+    return out;
+}
+
+bool DecodeCells(const std::string& text, std::vector<std::string>& cells) {
+    cells.clear();
+    size_t i = 0;
+    while (i < text.size()) {
+        size_t colon = text.find(':', i);
+        if (colon == std::string::npos) return false;
+        size_t len = 0;
+        for (size_t k = i; k < colon; ++k) {
+            if (text[k] < '0' || text[k] > '9') return false;
+            len = len * 10 + static_cast<size_t>(text[k] - '0');
+        }
+        size_t start = colon + 1;
+        if (start + len > text.size()) return false;
+        cells.push_back(text.substr(start, len));
+        i = start + len;
+    }
+    return true;
+}
+
 } // namespace psig::data
