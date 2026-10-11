@@ -22,6 +22,7 @@ public:
     QAction* selectAllAction() const { return m_selectAllAction; }
 
     void setModel(QAbstractItemModel* model);
+    void retranslateUi();   // 语言切换后刷新本页文案（含筛选框占位符）
 
 private:
     QTableView* m_table = nullptr;

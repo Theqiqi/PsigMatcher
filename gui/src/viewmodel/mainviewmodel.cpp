@@ -2,16 +2,24 @@
 #include "viewmodel/mainviewmodel.h"
 
 #include <QAction>
+#include <QApplication>
 #include <QDateTime>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QFileDialog>
+#include <QHeaderView>
+#include <QImage>
 #include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QLineEdit>
+#include <QLocale>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTableView>
+#include <QTranslator>
 #include <QtConcurrent>
 
 #include "view/aboutdialog.h"
@@ -70,6 +78,14 @@ psig::MatchResult toPsigResult(const ResultRow& r) {
     return m;
 }
 
+// psig 的 BGRA 位图 → 独立缓冲的 QImage（ARGB32）
+QImage toQImage(const psig::IconBitmap& bmp) {
+    if (!bmp.valid()) return {};
+    QImage img(reinterpret_cast<const uchar*>(bmp.pixels.data()), bmp.width, bmp.height,
+               bmp.width * 4, QImage::Format_ARGB32);
+    return img.copy(); // 脱离临时缓冲，持有一份独立数据
+}
+
 // 结果导出列定义（键, 标题），顺序与 psig 结果列一致（不含派生的十进制地址列）
 std::vector<std::pair<QString, QString>> resultColumnDefs() {
     return {{QStringLiteral("pattern_name"), QObject::tr("特征码名")},
@@ -83,11 +99,20 @@ std::vector<std::pair<QString, QString>> resultColumnDefs() {
             {QStringLiteral("custom"), QObject::tr("自定义")}};
 }
 
+// 对话框按钮接线（View 不 connect；统一在 VM 完成）
+void wireDialog(QDialog* dlg, QDialogButtonBox* box) {
+    if (!dlg || !box) return;
+    QObject::connect(box, &QDialogButtonBox::accepted, dlg, &QDialog::accept);
+    QObject::connect(box, &QDialogButtonBox::rejected, dlg, &QDialog::reject);
+}
+
 } // namespace
 
-MainViewModel::MainViewModel(QObject* parent) : QObject(parent) {}
+MainViewModel::MainViewModel(QObject* parent) : QObject(parent),
+    m_alive(std::make_shared<std::atomic_bool>(true)) {}
 
 MainViewModel::~MainViewModel() {
+    m_alive->store(false); // 通知图标后台任务停止回填
     if (m_scanWatcher) m_scanWatcher->waitForFinished();
     if (m_procWatcher) m_procWatcher->waitForFinished();
 }
@@ -116,18 +141,25 @@ void MainViewModel::install(MainWindow* view) {
     bindContextMenus();
 
     applyInitialColumns();
+
+    // 默认语言：跟随系统（QLocale() 初值取自系统语言，测试可经 setDefault 覆盖）
+    applyLanguage(QString(), /*feedback=*/false);
+
     // 启动即为进程页（未选定进程前锁定特征码/结果页）
     m_view->setProcessSelectionLocked(false);
     m_view->showProcessPage();
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("就绪，请选择目标进程"));
-    m_view->appendLog(tr("[启动] 进程特征码批量匹配器 v0.2.0 已就绪"));
+    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.2.1 已就绪"));
+
+    onRefreshProcesses(); // C-09：启动后自动枚举一次进程
 }
 
 void MainViewModel::bindSignaturePage() {
     // 行操作改由表格右键菜单触发
     auto* page = m_view->signaturePage();
     connect(page->addRowAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRow);
+    connect(page->addRowsAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRows);
     connect(page->deleteRowsAction(), &QAction::triggered, this, &MainViewModel::onDeleteSignatureRows);
     connect(page->manageColumnsAction(), &QAction::triggered, this, &MainViewModel::onManageColumns);
 }
@@ -145,6 +177,9 @@ void MainViewModel::bindProcessPage() {
     connect(page->table(), &QTableView::doubleClicked, this, [this](const QModelIndex&) {
         onConfirmProcessSelection();
     });
+    // 按列排序（点击表头）后重应用筛选（C-10/C-11）
+    connect(page->table()->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this,
+            [this](int, Qt::SortOrder) { applyProcessFilter(); });
 }
 
 void MainViewModel::bindResultPage() {
@@ -167,6 +202,7 @@ void MainViewModel::bindGlobalActions() {
     connect(m_view->cancelScanAction(), &QAction::triggered, this, &MainViewModel::onCancelScan);
     connect(m_view->manageColumnsAction(), &QAction::triggered, this, &MainViewModel::onManageColumns);
     connect(m_view->addSignatureRowAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRow);
+    connect(m_view->addSignatureRowsAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRows);
     connect(m_view->confirmProcessAction(), &QAction::triggered, this, &MainViewModel::onConfirmProcessSelection);
     connect(m_view->reselectProcessAction(), &QAction::triggered, this, &MainViewModel::onReselectProcess);
     connect(m_view->clearResultsAction(), &QAction::triggered, this, &MainViewModel::onClearResults);
@@ -175,6 +211,13 @@ void MainViewModel::bindGlobalActions() {
     connect(m_view->showResultPageAction(), &QAction::triggered, m_view, &MainWindow::showResultPage);
     connect(m_view->aboutAction(), &QAction::triggered, this, &MainViewModel::onAbout);
     connect(m_view->clearLogAction(), &QAction::triggered, this, &MainViewModel::onClearLog);
+    // 语言菜单（三项互斥，触发即切换）
+    connect(m_view->languageZhAction(), &QAction::triggered, this,
+            [this]() { applyLanguage(QStringLiteral("zh_CN")); });
+    connect(m_view->languageEnAction(), &QAction::triggered, this,
+            [this]() { applyLanguage(QStringLiteral("en_US")); });
+    connect(m_view->languageSystemAction(), &QAction::triggered, this,
+            [this]() { applyLanguage(QString()); });
 }
 
 void MainViewModel::bindContextMenus() {
@@ -208,7 +251,19 @@ void MainViewModel::onResultContextMenu(const QPoint& pos) {
 void MainViewModel::applyInitialColumns() {
     std::vector<ColumnDef> cols;
     for (const auto& c : psig::BuiltinSignatureColumns()) cols.push_back(toModelColumn(c));
+    // C-08：「进程」列（GUI 侧内置，键 process）——新增行时自动填当前目标进程名
+    ColumnDef process;
+    process.key = QStringLiteral("process");
+    process.title = QStringLiteral("进程");
+    process.type = QStringLiteral("text");
+    process.builtin = true;
+    cols.push_back(process);
     m_sigModel->setColumns(cols);
+}
+
+void MainViewModel::logTagged(const QString& tag, const QString& message) {
+    if (!m_view) return;
+    m_view->appendLog(QStringLiteral("[") + tag + QStringLiteral("] ") + message);
 }
 
 void MainViewModel::refreshPersistentStatus() {
@@ -221,14 +276,72 @@ void MainViewModel::refreshPersistentStatus() {
 }
 
 // ---------------------------------------------------------------------------
+// 语言
+// ---------------------------------------------------------------------------
+
+void MainViewModel::applyLanguage(const QString& code, bool feedback) {
+    m_language = code;
+    // 解析实际生效语言：空 = 跟随系统（中文为源语言，非中文回退英文）
+    QString effective = code;
+    if (effective.isEmpty()) {
+        effective = QLocale().name().startsWith(QStringLiteral("zh"))
+                        ? QStringLiteral("zh_CN")
+                        : QStringLiteral("en_US");
+    }
+
+    if (m_translator) {
+        QApplication::removeTranslator(m_translator);
+        delete m_translator;
+        m_translator = nullptr;
+    }
+    // 源语言为中文：仅非中文目标需要装载翻译
+    if (effective != QStringLiteral("zh_CN")) {
+        auto* translator = new QTranslator(this);
+        if (translator->load(QStringLiteral(":/i18n/psig_gui_") + effective + QStringLiteral(".qm"))) {
+            QApplication::installTranslator(translator);
+            m_translator = translator;
+        } else {
+            delete translator;
+        }
+    }
+
+    if (m_view) {
+        m_view->setLanguageChecked(code);
+        m_view->retranslateUi();
+    }
+    if (m_sigModel) m_sigModel->retranslate();
+    if (m_procModel) m_procModel->retranslate();
+    if (m_resultModel) m_resultModel->retranslate();
+
+    if (feedback && m_view) {
+        const QString label = (effective == QStringLiteral("zh_CN")) ? QStringLiteral("中文")
+                                                                     : QStringLiteral("English");
+        m_view->setTransientMessage(tr("语言已切换为 %1").arg(label));
+        logTagged(QStringLiteral("settings"), tr("语言 → %1").arg(effective));
+    }
+}
+
+// ---------------------------------------------------------------------------
 // 特征码表
 // ---------------------------------------------------------------------------
 
 void MainViewModel::onAddSignatureRow() {
-    m_sigModel->addRow();
+    m_sigModel->addRow(m_targetName); // C-08：自动填进程列
     m_view->signaturePage()->selectRow(m_sigModel->rowCount() - 1);
     refreshPersistentStatus();
-    m_view->setTransientMessage(tr("已新增特征码行"));
+    m_view->setTransientMessage(tr("已新增 1 行"));
+    logTagged(QStringLiteral("edit"), tr("新增特征码 1 行"));
+}
+
+void MainViewModel::onAddSignatureRows() {
+    bool ok = false;
+    const int count = QInputDialog::getInt(m_view, tr("新增多行"), tr("新增行数："), 1, 1, 10000, 1, &ok);
+    if (!ok) return; // 取消路径
+    m_sigModel->addRows(count, m_targetName);
+    m_view->signaturePage()->selectRow(m_sigModel->rowCount() - 1);
+    refreshPersistentStatus();
+    m_view->setTransientMessage(tr("已新增 %1 行").arg(count));
+    logTagged(QStringLiteral("edit"), tr("新增特征码 %1 行").arg(count));
 }
 
 void MainViewModel::onDeleteSignatureRows() {
@@ -243,16 +356,21 @@ void MainViewModel::onDeleteSignatureRows() {
     m_sigModel->removeRows(rows);
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已删除 %1 行").arg(rows.size()));
-    m_view->appendLog(tr("[编辑] 删除特征码 %1 行").arg(rows.size()));
+    logTagged(QStringLiteral("edit"), tr("删除特征码 %1 行").arg(rows.size()));
 }
 
 void MainViewModel::onManageColumns() {
     ColumnManagerDialog dlg(m_view);
     dlg.setColumns(m_sigModel->columns());
+    wireDialog(&dlg, dlg.buttonBox());
+    connect(dlg.addBtn(), &QPushButton::clicked, &dlg, &ColumnManagerDialog::addColumnRow);
+    connect(dlg.removeBtn(), &QPushButton::clicked, &dlg, &ColumnManagerDialog::removeSelectedColumnRow);
+    connect(dlg.upBtn(), &QPushButton::clicked, &dlg, &ColumnManagerDialog::moveSelectedUp);
+    connect(dlg.downBtn(), &QPushButton::clicked, &dlg, &ColumnManagerDialog::moveSelectedDown);
     if (dlg.exec() != QDialog::Accepted) return;
     m_sigModel->setColumns(dlg.columns());
     m_view->setTransientMessage(tr("列已更新"));
-    m_view->appendLog(tr("[编辑] 更新列定义"));
+    logTagged(QStringLiteral("edit"), tr("更新列定义"));
 }
 
 void MainViewModel::onImportSignatures() {
@@ -289,13 +407,13 @@ void MainViewModel::importSignaturesFromPath(const QString& path) {
     }
     if (!err.empty()) {
         m_view->setTransientMessage(tr("导入失败: %1").arg(QString::fromStdString(err)), true);
-        m_view->appendLog(tr("[导入] 失败: %1").arg(QString::fromStdString(err)));
+        logTagged(QStringLiteral("error"), tr("导入失败: %1").arg(QString::fromStdString(err)));
         return;
     }
     applyTableToModel(table);
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已导入 %1 条").arg(table.rows.size()));
-    m_view->appendLog(tr("[导入] %1 条").arg(table.rows.size()));
+    logTagged(QStringLiteral("import"), tr("%1 条").arg(table.rows.size()));
 }
 
 void MainViewModel::onExportSignatures() {
@@ -313,10 +431,11 @@ void MainViewModel::exportSignaturesToPath(const QString& path) {
                   : psig::ExportSignaturesCsv(path.toStdString(), table, err);
     if (!ok) {
         m_view->setTransientMessage(tr("导出失败: %1").arg(QString::fromStdString(err)), true);
+        logTagged(QStringLiteral("error"), tr("导出失败: %1").arg(QString::fromStdString(err)));
         return;
     }
     m_view->setTransientMessage(tr("已导出: %1").arg(path));
-    m_view->appendLog(tr("[导出] 特征码 → %1").arg(path));
+    logTagged(QStringLiteral("export"), tr("特征码 → %1").arg(path));
 }
 
 // ---------------------------------------------------------------------------
@@ -339,9 +458,16 @@ void MainViewModel::onProcessesEnumerated() {
         rows.push_back(r);
     }
     m_procModel->setProcesses(rows);
+    applyProcessFilter();   // C-10：刷新后重应用当前筛选
+    startIconLoad();        // C-12：异步回填进程图标
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已枚举 %1 个进程").arg(rows.size()));
-    m_view->appendLog(tr("[进程] 枚举 %1 个").arg(rows.size()));
+    logTagged(QStringLiteral("process"), tr("枚举 %1 个").arg(rows.size()));
+}
+
+void MainViewModel::applyProcessFilter() {
+    if (!m_view) return;
+    onProcessFilterChanged(m_view->processPage()->filterEdit()->text());
 }
 
 void MainViewModel::onProcessFilterChanged(const QString& text) {
@@ -352,6 +478,42 @@ void MainViewModel::onProcessFilterChanged(const QString& text) {
         bool show = needle.isEmpty() || row.name.contains(needle, Qt::CaseInsensitive) ||
                     row.path.contains(needle, Qt::CaseInsensitive);
         table->setRowHidden(r, !show);
+    }
+}
+
+void MainViewModel::startIconLoad() {
+    if (!m_procModel || m_procModel->rowCount() == 0) return;
+    std::vector<uint32_t> pids;
+    pids.reserve(static_cast<size_t>(m_procModel->rowCount()));
+    for (const auto& r : m_procModel->processes()) pids.push_back(r.pid);
+
+    MainViewModel* self = this;
+    std::shared_ptr<std::atomic_bool> alive = m_alive;
+    // 后台顺序取图标；不保留 QFuture（任务独立运行），仅以 alive 标志保证析构安全
+    QFuture<void> iconFuture = QtConcurrent::run([self, pids, alive]() {
+        for (uint32_t pid : pids) {
+            if (!alive->load()) return; // VM 已析构，停止回填
+            psig::IconBitmap bmp = psig::ProcessIcon(pid);
+            if (!bmp.valid()) bmp = psig::DefaultProcessIcon();
+            QImage img = toQImage(bmp);
+            if (img.isNull()) continue;
+            if (!alive->load()) return;
+            QMetaObject::invokeMethod(self, [self, pid, img]() {
+                self->applyProcessIcon(pid, QIcon(QPixmap::fromImage(img)));
+            }, Qt::QueuedConnection);
+        }
+    });
+    Q_UNUSED(iconFuture);
+}
+
+void MainViewModel::applyProcessIcon(uint32_t pid, const QIcon& icon) {
+    if (!m_procModel || icon.isNull()) return;
+    const int n = m_procModel->rowCount();
+    for (int r = 0; r < n; ++r) {
+        if (m_procModel->processAt(r).pid == pid) {
+            m_procModel->setIcon(r, icon);
+            break;
+        }
     }
 }
 
@@ -380,14 +542,14 @@ void MainViewModel::onConfirmProcessSelection() {
     m_view->showSignaturePage();
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已选定目标：%1 (pid %2)").arg(m_targetName).arg(m_targetPid));
-    m_view->appendLog(tr("[导航] 选定目标 %1 (pid %2)").arg(m_targetName).arg(m_targetPid));
+    logTagged(QStringLiteral("nav"), tr("选定目标 %1 (pid %2)").arg(m_targetName).arg(m_targetPid));
 }
 
 void MainViewModel::onReselectProcess() {
     m_view->setProcessSelectionLocked(false);
     m_view->showProcessPage();
     m_view->setTransientMessage(tr("请重新选择目标进程"));
-    m_view->appendLog(tr("[导航] 返回进程页"));
+    logTagged(QStringLiteral("nav"), tr("返回进程页"));
 }
 
 // ---------------------------------------------------------------------------
@@ -420,7 +582,7 @@ void MainViewModel::onStartScan() {
 
     m_view->setTransientMessage(tr("正在扫描 %1 个进程 × %2 个特征码…").arg(pids.size()).arg(patterns.size()));
     m_view->setProgress(0);
-    m_view->appendLog(tr("[扫描] 开始: %1 进程 × %2 特征码").arg(pids.size()).arg(patterns.size()));
+    logTagged(QStringLiteral("scan"), tr("开始: %1 进程 × %2 特征码").arg(pids.size()).arg(patterns.size()));
 
     MainWindow* view = m_view;
     std::atomic_bool* cancelPtr = &m_cancel;
@@ -430,7 +592,7 @@ void MainViewModel::onStartScan() {
         const size_t hits = sp.hits;
         QMetaObject::invokeMethod(view, [view, pct, pid, hits]() {
             view->setProgress(pct);
-            view->setTransientMessage(QStringLiteral("扫描 pid=%1 … 命中 %2").arg(pid).arg(hits));
+            view->setTransientMessage(MainViewModel::tr("扫描 pid=%1 … 命中 %2").arg(pid).arg(hits));
         }, Qt::QueuedConnection);
     };
     m_scanWatcher->setFuture(QtConcurrent::run([req, cb, cancelPtr]() {
@@ -453,9 +615,9 @@ void MainViewModel::onScanFinished() {
     const bool cancelled = m_cancel.load();
     m_view->setTransientMessage(cancelled ? tr("已取消，命中 %1 条").arg(rows.size())
                                           : tr("扫描完成，命中 %1 条").arg(rows.size()));
-    m_view->appendLog(tr("[扫描] %1，命中 %2 条")
-                          .arg(cancelled ? tr("已取消") : tr("完成"))
-                          .arg(rows.size()));
+    logTagged(QStringLiteral("scan"), tr("%1，命中 %2 条")
+                                          .arg(cancelled ? tr("已取消") : tr("完成"))
+                                          .arg(rows.size()));
 }
 
 // ---------------------------------------------------------------------------
@@ -514,10 +676,11 @@ void MainViewModel::exportResultsToPath(const QString& path) {
     }
     if (!ok) {
         m_view->setTransientMessage(tr("导出失败: %1").arg(QString::fromStdString(err)), true);
+        logTagged(QStringLiteral("error"), tr("导出失败: %1").arg(QString::fromStdString(err)));
         return;
     }
     m_view->setTransientMessage(tr("已导出: %1").arg(path));
-    m_view->appendLog(tr("[导出] 结果 → %1").arg(path));
+    logTagged(QStringLiteral("export"), tr("结果 → %1").arg(path));
 }
 
 void MainViewModel::onDeleteResultRows() {
@@ -531,7 +694,7 @@ void MainViewModel::onDeleteResultRows() {
     }
     m_resultModel->removeRows(rows);
     m_view->setTransientMessage(tr("已删除 %1 行").arg(rows.size()));
-    m_view->appendLog(tr("[结果] 删除 %1 行").arg(rows.size()));
+    logTagged(QStringLiteral("result"), tr("删除 %1 行").arg(rows.size()));
 }
 
 void MainViewModel::onFillCustomColumn() {
@@ -565,7 +728,7 @@ void MainViewModel::onFillCustomColumn() {
     }
     m_resultModel->setCustom(targets, text);
     m_view->setTransientMessage(tr("已填充 %1 行自定义列").arg(targets.size()));
-    m_view->appendLog(tr("[结果] 填充自定义列 %1 行").arg(targets.size()));
+    logTagged(QStringLiteral("result"), tr("填充自定义列 %1 行").arg(targets.size()));
 }
 
 void MainViewModel::onTemplateTextChanged() {
@@ -575,6 +738,7 @@ void MainViewModel::onTemplateTextChanged() {
 void MainViewModel::onSelectExportColumns() {
     ExportColumnsDialog dlg(m_view);
     dlg.setColumns(resultColumnDefs(), m_exportColumns);
+    wireDialog(&dlg, dlg.buttonBox());
     if (dlg.exec() != QDialog::Accepted) return;
     const QStringList keys = dlg.selectedKeys();
     if (keys.isEmpty()) {
@@ -583,7 +747,7 @@ void MainViewModel::onSelectExportColumns() {
     }
     m_exportColumns = keys;
     m_view->setTransientMessage(tr("将导出 %1 列").arg(keys.size()));
-    m_view->appendLog(tr("[结果] 选择导出列 %1 个").arg(keys.size()));
+    logTagged(QStringLiteral("result"), tr("选择导出列 %1 个").arg(keys.size()));
 }
 
 void MainViewModel::onAbout() {
@@ -593,7 +757,8 @@ void MainViewModel::onAbout() {
     const QString cfg = QStringLiteral("Release");
 #endif
     AboutDialog dlg(m_view);
-    dlg.setInfo(tr("进程特征码批量匹配器 v0.2.0\n"
+    wireDialog(&dlg, dlg.buttonBox());
+    dlg.setInfo(tr("进程特征码批量匹配器 v0.2.1\n"
                    "基于 psig 静态库（进程特征码批量匹配）\n"
                    "构建配置：%1\nQt 版本：%2")
                     .arg(cfg, QString::fromLatin1(qVersion())));
@@ -607,7 +772,7 @@ void MainViewModel::onClearResults() {
     }
     m_resultModel->clear();
     m_view->setTransientMessage(tr("结果已清空"));
-    m_view->appendLog(tr("[结果] 已清空"));
+    logTagged(QStringLiteral("result"), tr("已清空"));
 }
 
 void MainViewModel::onClearLog() {

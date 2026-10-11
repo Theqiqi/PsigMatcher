@@ -56,16 +56,16 @@ QVariant ResultTableModel::headerData(int section, Qt::Orientation orientation, 
     if (role != Qt::DisplayRole) return {};
     if (orientation == Qt::Horizontal) {
         switch (section) {
-        case 0: return QStringLiteral("特征码名");
-        case 1: return QStringLiteral("进程");
+        case 0: return tr("特征码名");
+        case 1: return tr("进程");
         case 2: return QStringLiteral("PID");
-        case 3: return QStringLiteral("地址(十进制)");
-        case 4: return QStringLiteral("地址");
-        case 5: return QStringLiteral("模块");
-        case 6: return QStringLiteral("模块基址");
-        case 7: return QStringLiteral("匹配字节");
-        case 8: return QStringLiteral("命中时间");
-        case 9: return QStringLiteral("自定义");
+        case 3: return tr("地址(十进制)");
+        case 4: return tr("地址");
+        case 5: return tr("模块");
+        case 6: return tr("模块基址");
+        case 7: return tr("匹配字节");
+        case 8: return tr("命中时间");
+        case 9: return tr("自定义");
         default: return {};
         }
     }
@@ -121,4 +121,8 @@ void ResultTableModel::setCustom(const std::vector<int>& rows, const QString& te
         const QModelIndex idx = index(r, col);
         emit dataChanged(idx, idx, {Qt::DisplayRole, Qt::EditRole});
     }
+}
+
+void ResultTableModel::retranslate() {
+    emit headerDataChanged(Qt::Horizontal, 0, columnCount() - 1);
 }

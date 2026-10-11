@@ -1,6 +1,7 @@
 // model/types.h - Model 层数据结构（仅依赖 Qt）
 #pragma once
 
+#include <QIcon>
 #include <QString>
 #include <QStringList>
 #include <QtGlobal>
@@ -26,6 +27,7 @@ struct ProcessRow {
     QString name;
     QString path;
     bool accessible = false;
+    QIcon icon;             // 显示属性（由 ViewModel 注入，不参与导入导出）
 };
 
 // 匹配结果行

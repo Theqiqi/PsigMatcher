@@ -27,6 +27,7 @@ public:
 
     void removeRows(const std::vector<int>& rows);                       // 单行/多选批量删除
     void setCustom(const std::vector<int>& rows, const QString& text);   // 批量填充自定义列
+    void retranslate();                                                  // 语言切换后刷新表头
 
     static int customColumn(); // 自定义列索引（末列）
 

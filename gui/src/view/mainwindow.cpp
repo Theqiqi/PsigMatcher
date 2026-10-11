@@ -2,10 +2,12 @@
 #include "view/mainwindow.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QDockWidget>
 #include <QKeySequence>
 #include <QLabel>
+#include <QMenu>
 #include <QMenuBar>
 #include <QPlainTextEdit>
 #include <QProgressBar>
@@ -19,25 +21,34 @@
 #include "view/signatureeditorpage.h"
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
-    setWindowTitle(tr("进程特征码批量匹配器 v0.2.0"));
     resize(1100, 720);
 
     buildMenuAndToolbar();
     buildCentral();
     buildStatusAndLog();
+    retranslateUi();
 }
 
 void MainWindow::buildMenuAndToolbar() {
-    m_importAction = new QAction(tr("导入特征码"), this);
-    m_exportAction = new QAction(tr("导出特征码"), this);
-    m_refreshAction = new QAction(tr("刷新进程"), this);
-    m_startScanAction = new QAction(tr("开始扫描"), this);
-    m_cancelScanAction = new QAction(tr("取消扫描"), this);
-    m_manageColumnsAction = new QAction(tr("列管理"), this);
-    m_addRowAction = new QAction(tr("新增行"), this);
-    m_confirmProcessAction = new QAction(tr("确认选择"), this);
-    m_reselectProcessAction = new QAction(tr("重新选择进程"), this);
-    m_clearResultsAction = new QAction(tr("清空结果"), this);
+    m_importAction = new QAction(this);
+    m_exportAction = new QAction(this);
+    m_refreshAction = new QAction(this);
+    m_startScanAction = new QAction(this);
+    m_cancelScanAction = new QAction(this);
+    m_manageColumnsAction = new QAction(this);
+    m_addRowAction = new QAction(this);
+    m_addRowsAction = new QAction(this);
+    m_confirmProcessAction = new QAction(this);
+    m_reselectProcessAction = new QAction(this);
+    m_clearResultsAction = new QAction(this);
+    m_quitAction = new QAction(this);
+
+    // 视图导航动作（仅暴露给 ViewModel，由 VM connect）
+    m_showSignatureAction = new QAction(this);
+    m_showProcessAction = new QAction(this);
+    m_showResultAction = new QAction(this);
+    m_clearLogAction = new QAction(this);
+    m_aboutAction = new QAction(this);
 
     // 图标（用标准图标，替代纯文字；tooltip 保留文字）
     QStyle* st = style();
@@ -48,6 +59,7 @@ void MainWindow::buildMenuAndToolbar() {
     m_cancelScanAction->setIcon(st->standardIcon(QStyle::SP_MediaStop));
     m_manageColumnsAction->setIcon(st->standardIcon(QStyle::SP_FileDialogDetailedView));
     m_addRowAction->setIcon(st->standardIcon(QStyle::SP_FileDialogNewFolder));
+    m_addRowsAction->setIcon(st->standardIcon(QStyle::SP_FileDialogNewFolder));
     m_confirmProcessAction->setIcon(st->standardIcon(QStyle::SP_DialogApplyButton));
     m_reselectProcessAction->setIcon(st->standardIcon(QStyle::SP_ArrowBack));
     m_clearResultsAction->setIcon(st->standardIcon(QStyle::SP_TrashIcon));
@@ -61,32 +73,59 @@ void MainWindow::buildMenuAndToolbar() {
     m_manageColumnsAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+M")));
     m_addRowAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+N")));
     m_confirmProcessAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Return")));
-
-    QMenu* fileMenu = menuBar()->addMenu(tr("文件(&F)"));
-    fileMenu->addAction(m_importAction);
-    fileMenu->addAction(m_exportAction);
-    fileMenu->addSeparator();
-    fileMenu->addAction(tr("退出"), this, &QWidget::close);
-
-    QMenu* editMenu = menuBar()->addMenu(tr("编辑(&E)"));
-    editMenu->addAction(m_addRowAction);
-    editMenu->addAction(m_manageColumnsAction);
-
-    QMenu* scanMenu = menuBar()->addMenu(tr("扫描(&S)"));
-    scanMenu->addAction(m_refreshAction);
-    scanMenu->addAction(m_confirmProcessAction);
-    scanMenu->addSeparator();
-    scanMenu->addAction(m_startScanAction);
-    scanMenu->addAction(m_cancelScanAction);
-    scanMenu->addAction(m_reselectProcessAction);
-
-    QMenu* helpMenu = menuBar()->addMenu(tr("帮助(&H)"));
-    m_aboutAction = new QAction(tr("关于"), this);
+    m_showSignatureAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+1")));
+    m_showProcessAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+2")));
+    m_showResultAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+3")));
+    m_clearLogAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+L")));
     m_aboutAction->setShortcut(QKeySequence(Qt::Key_F1));
-    helpMenu->addAction(m_aboutAction);
+
+    // 菜单按显示顺序创建：文件 / 编辑 / 扫描 / 视图 / 语言 / 帮助
+    m_fileMenu = menuBar()->addMenu(QString());
+    m_fileMenu->addAction(m_importAction);
+    m_fileMenu->addAction(m_exportAction);
+    m_fileMenu->addSeparator();
+    m_fileMenu->addAction(m_quitAction);
+
+    m_editMenu = menuBar()->addMenu(QString());
+    m_editMenu->addAction(m_addRowAction);
+    m_editMenu->addAction(m_addRowsAction);
+    m_editMenu->addAction(m_manageColumnsAction);
+
+    m_scanMenu = menuBar()->addMenu(QString());
+    m_scanMenu->addAction(m_refreshAction);
+    m_scanMenu->addAction(m_confirmProcessAction);
+    m_scanMenu->addSeparator();
+    m_scanMenu->addAction(m_startScanAction);
+    m_scanMenu->addAction(m_cancelScanAction);
+    m_scanMenu->addAction(m_reselectProcessAction);
+
+    m_viewMenu = menuBar()->addMenu(QString());
+    m_viewMenu->addAction(m_showProcessAction);
+    m_viewMenu->addAction(m_showSignatureAction);
+    m_viewMenu->addAction(m_showResultAction);
+    m_viewMenu->addSeparator();
+    m_viewMenu->addAction(m_clearLogAction);
+
+    // 「语言」菜单：位于「视图」与「帮助」之间，三项互斥
+    m_langGroup = new QActionGroup(this);
+    m_langZhAction = new QAction(this);
+    m_langEnAction = new QAction(this);
+    m_langSystemAction = new QAction(this);
+    for (QAction* a : {m_langZhAction, m_langEnAction, m_langSystemAction}) {
+        a->setCheckable(true);
+        m_langGroup->addAction(a);
+    }
+    m_langMenu = menuBar()->addMenu(QString());
+    m_langMenu->addAction(m_langZhAction);
+    m_langMenu->addAction(m_langEnAction);
+    m_langMenu->addSeparator();
+    m_langMenu->addAction(m_langSystemAction);
+
+    m_helpMenu = menuBar()->addMenu(QString());
+    m_helpMenu->addAction(m_aboutAction);
 
     // 主工具栏：图标化；按页显隐
-    m_toolbar = addToolBar(tr("主工具栏"));
+    m_toolbar = addToolBar(QString());
     m_toolbar->setMovable(false);
     m_toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     m_toolbar->addAction(m_refreshAction);
@@ -110,35 +149,19 @@ void MainWindow::buildCentral() {
     m_stack->addWidget(m_processPage);   // index 1
     m_stack->addWidget(m_resultPage);    // index 2
     setCentralWidget(m_stack);
-
-    // 视图导航动作（仅暴露给 ViewModel，由 VM connect）
-    m_showSignatureAction = new QAction(tr("特征码编辑"), this);
-    m_showProcessAction = new QAction(tr("进程选择"), this);
-    m_showResultAction = new QAction(tr("匹配结果"), this);
-    m_clearLogAction = new QAction(tr("清空日志"), this);
-    m_showSignatureAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+1")));
-    m_showProcessAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+2")));
-    m_showResultAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+3")));
-    m_clearLogAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+L")));
-    QMenu* viewMenu = menuBar()->addMenu(tr("视图(&V)"));
-    viewMenu->addAction(m_showProcessAction);
-    viewMenu->addAction(m_showSignatureAction);
-    viewMenu->addAction(m_showResultAction);
-    viewMenu->addSeparator();
-    viewMenu->addAction(m_clearLogAction);
 }
 
 void MainWindow::buildStatusAndLog() {
     // 历史日志：独立 Dock（不写入状态栏）
-    QDockWidget* dock = new QDockWidget(tr("历史日志"), this);
-    m_logEdit = new QPlainTextEdit(dock);
+    m_logDock = new QDockWidget(this);
+    m_logEdit = new QPlainTextEdit(m_logDock);
     m_logEdit->setReadOnly(true);
     m_logEdit->setMaximumBlockCount(2000);
-    dock->setWidget(m_logEdit);
-    addDockWidget(Qt::BottomDockWidgetArea, dock);
+    m_logDock->setWidget(m_logEdit);
+    addDockWidget(Qt::BottomDockWidgetArea, m_logDock);
 
     // 状态栏：左=持久状态区，右=瞬时反馈区；进度条置于左区
-    m_persistentLabel = new QLabel(tr("就绪 | 目标 - | 进程 - | 特征码 -"), this);
+    m_persistentLabel = new QLabel(this);
     m_transientLabel = new QLabel(QString(), this);
     m_progressBar = new QProgressBar(this);
     m_progressBar->setRange(0, 100);
@@ -173,6 +196,7 @@ void MainWindow::applyToolbarForPage(int index) {
     m_exportAction->setVisible(sigPage);
     m_startScanAction->setVisible(sigPage);
     m_cancelScanAction->setVisible(sigPage);
+    m_addRowAction->setVisible(sigPage);
     m_clearResultsAction->setVisible(resPage);
     m_reselectProcessAction->setVisible(m_processSelectionLocked && !processPage);
 }
@@ -199,6 +223,63 @@ void MainWindow::setProgress(int value) {
     m_progressBar->setValue(value);
 }
 
-void MainWindow::appendLog(const QString& text) { m_logEdit->appendPlainText(text); }
+void MainWindow::appendLog(const QString& text) {
+    // 按语言无关的 ASCII 标签着色（标签由 VM 追加，不随语言变化）
+    QString color = QStringLiteral("#333333");
+    if (text.startsWith(QStringLiteral("[error]")))
+        color = QStringLiteral("#c62828");   // 错误：红
+    else if (text.startsWith(QStringLiteral("[export]")) || text.startsWith(QStringLiteral("[import]")))
+        color = QStringLiteral("#2e7d32");   // 成功：绿
+    else if (text.startsWith(QStringLiteral("[startup]")) || text.startsWith(QStringLiteral("[settings]")))
+        color = QStringLiteral("#455a64");   // 设置/启动：灰蓝
+    const QString html = QStringLiteral("<span style=\"color:%1;\">%2</span>")
+                             .arg(color, text.toHtmlEscaped());
+    m_logEdit->appendHtml(html);
+}
 
 void MainWindow::clearLog() { m_logEdit->clear(); }
+
+void MainWindow::setLanguageChecked(const QString& code) {
+    if (code == QStringLiteral("zh_CN")) m_langZhAction->setChecked(true);
+    else if (code == QStringLiteral("en_US")) m_langEnAction->setChecked(true);
+    else m_langSystemAction->setChecked(true);
+}
+
+void MainWindow::retranslateUi() {
+    setWindowTitle(tr("进程特征码批量匹配器 v0.2.1"));
+
+    m_fileMenu->setTitle(tr("文件(&F)"));
+    m_editMenu->setTitle(tr("编辑(&E)"));
+    m_scanMenu->setTitle(tr("扫描(&S)"));
+    m_viewMenu->setTitle(tr("视图(&V)"));
+    m_langMenu->setTitle(tr("语言(&L)"));
+    m_helpMenu->setTitle(tr("帮助(&H)"));
+
+    m_importAction->setText(tr("导入特征码"));
+    m_exportAction->setText(tr("导出特征码"));
+    m_refreshAction->setText(tr("刷新进程"));
+    m_startScanAction->setText(tr("开始扫描"));
+    m_cancelScanAction->setText(tr("取消扫描"));
+    m_manageColumnsAction->setText(tr("列管理"));
+    m_addRowAction->setText(tr("新增一行"));
+    m_addRowsAction->setText(tr("新增多行…"));
+    m_confirmProcessAction->setText(tr("确认选择"));
+    m_reselectProcessAction->setText(tr("重新选择进程"));
+    m_clearResultsAction->setText(tr("清空结果"));
+    m_quitAction->setText(tr("退出"));
+    m_showSignatureAction->setText(tr("特征码编辑"));
+    m_showProcessAction->setText(tr("进程选择"));
+    m_showResultAction->setText(tr("匹配结果"));
+    m_clearLogAction->setText(tr("清空日志"));
+    m_aboutAction->setText(tr("关于"));
+    m_langZhAction->setText(tr("中文"));
+    m_langEnAction->setText(tr("English"));
+    m_langSystemAction->setText(tr("跟随系统"));
+
+    m_toolbar->setWindowTitle(tr("主工具栏"));
+    m_logDock->setWindowTitle(tr("历史日志"));
+
+    m_signaturePage->retranslateUi();
+    m_processPage->retranslateUi();
+    m_resultPage->retranslateUi();
+}

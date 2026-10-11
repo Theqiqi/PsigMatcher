@@ -17,17 +17,20 @@ public:
     QTableView* table() const { return m_table; }
     QMenu* contextMenu() const { return m_contextMenu; }
     QAction* addRowAction() const { return m_addRowAction; }
+    QAction* addRowsAction() const { return m_addRowsAction; }
     QAction* deleteRowsAction() const { return m_deleteRowsAction; }
     QAction* manageColumnsAction() const { return m_manageColumnsAction; }
 
     // 公开 UI 方法（供 ViewModel 更新界面）
     void setModel(QAbstractItemModel* model);
     void selectRow(int row);
+    void retranslateUi();   // 语言切换后刷新本页文案
 
 private:
     QTableView* m_table = nullptr;
     QMenu* m_contextMenu = nullptr;
     QAction* m_addRowAction = nullptr;
+    QAction* m_addRowsAction = nullptr;
     QAction* m_deleteRowsAction = nullptr;
     QAction* m_manageColumnsAction = nullptr;
 };

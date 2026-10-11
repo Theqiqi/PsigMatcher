@@ -26,7 +26,15 @@ public:
     void setColumns(const std::vector<ColumnDef>& cols);
     std::vector<ColumnDef> columns() const;
 
+    // 由 ViewModel 连接按钮后调用（View 内部只操作自身表格）
+    void addColumnRow();             // 追加一空列
+    void removeSelectedColumnRow();  // 删除选中列
+    void moveSelectedUp();           // 选中列上移
+    void moveSelectedDown();         // 选中列下移
+
 private:
+    void SwapRows(int a, int b);     // 交换两行的单元格项
+
     QTableWidget* m_table = nullptr;
     QPushButton* m_addBtn = nullptr;
     QPushButton* m_removeBtn = nullptr;

@@ -1,40 +1,125 @@
-/* style.qss - psig_gui 样式表 */
-QMainWindow {
-    background: #f5f6f8;
-}
-QTableView {
+/* style.qss - psig_gui 样式表（v0.2.1：统一白底 + 颜色点缀） */
+
+QMainWindow, QDialog {
     background: #ffffff;
-    alternate-background-color: #f0f3f7;
-    gridline-color: #d0d7de;
+}
+QWidget {
+    color: #24292f;
+}
+
+/* 表格类：白底 + 浅色斑马纹 + 蓝色选中 */
+QTableView, QTableWidget, QListView, QListWidget {
+    background: #ffffff;
+    alternate-background-color: #f4f7fb;
+    gridline-color: #e2e8f0;
     selection-background-color: #3a6ea5;
     selection-color: #ffffff;
+    border: 1px solid #d6dee8;
 }
+
+/* 表头：灰蓝点缀 */
 QHeaderView::section {
-    background: #e3e8ee;
-    padding: 4px 6px;
+    background: #eef3f9;
+    color: #33475b;
+    padding: 5px 8px;
     border: none;
-    border-right: 1px solid #d0d7de;
-    border-bottom: 1px solid #d0d7de;
+    border-right: 1px solid #d6dee8;
+    border-bottom: 1px solid #d6dee8;
 }
+QHeaderView::section:hover {
+    background: #e2ecf7;
+}
+
+/* 工具栏与菜单：浅灰蓝点缀 */
 QToolBar {
-    background: #e9edf2;
+    background: #f2f5f9;
+    border-bottom: 1px solid #d6dee8;
     spacing: 4px;
-    padding: 2px;
+    padding: 3px;
 }
+QToolButton {
+    padding: 4px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+QToolButton:hover {
+    background: #e2ecf7;
+    border: 1px solid #bcd3ea;
+}
+QMenuBar {
+    background: #f2f5f9;
+}
+QMenuBar::item:selected {
+    background: #e2ecf7;
+}
+QMenu {
+    background: #ffffff;
+    border: 1px solid #d6dee8;
+}
+QMenu::item:selected {
+    background: #e2ecf7;
+    color: #1b3a5b;
+}
+
+/* 按钮：白底描边，主按钮蓝色描边 */
 QPushButton {
-    padding: 4px 10px;
+    padding: 5px 12px;
     border: 1px solid #b7c0cc;
     border-radius: 4px;
     background: #fbfcfe;
 }
 QPushButton:hover {
     background: #eaf1fb;
+    border: 1px solid #8fb4d9;
+}
+QPushButton:default {
+    border: 1px solid #3a6ea5;
+}
+
+/* 输入框：白底，聚焦蓝色描边 */
+QLineEdit {
+    background: #ffffff;
+    border: 1px solid #cfd8e3;
+    border-radius: 4px;
+    padding: 4px 6px;
+    selection-background-color: #3a6ea5;
+    selection-color: #ffffff;
+}
+QLineEdit:focus {
+    border: 1px solid #3a6ea5;
+}
+
+/* 日志/模板文本框：白底等宽（着色由内容 HTML 决定） */
+QPlainTextEdit {
+    background: #ffffff;
+    color: #24292f;
+    border: 1px solid #d6dee8;
+    font-family: Consolas, "Courier New", monospace;
+    selection-background-color: #3a6ea5;
+    selection-color: #ffffff;
+}
+
+/* 停靠面板标题与状态栏 */
+QDockWidget::title {
+    background: #eef3f9;
+    color: #33475b;
+    padding: 4px 8px;
 }
 QStatusBar {
-    background: #e9edf2;
+    background: #f2f5f9;
+    color: #33475b;
+    border-top: 1px solid #d6dee8;
 }
-QPlainTextEdit {
-    background: #1e1e1e;
-    color: #d4d4d4;
-    font-family: Consolas, monospace;
+
+/* 进度条：蓝色填充点缀 */
+QProgressBar {
+    background: #eef3f9;
+    border: 1px solid #d6dee8;
+    border-radius: 4px;
+    text-align: center;
+    color: #33475b;
+}
+QProgressBar::chunk {
+    background: #3a6ea5;
+    border-radius: 3px;
 }

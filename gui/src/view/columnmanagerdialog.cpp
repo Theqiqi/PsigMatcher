@@ -35,6 +35,9 @@ ColumnManagerDialog::ColumnManagerDialog(QWidget* parent) : QDialog(parent) {
     body->addLayout(side);
 
     m_buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    // 统一按钮文案（避免随 Qt 内建翻译出现中英混排）
+    m_buttonBox->button(QDialogButtonBox::Ok)->setText(tr("确定"));
+    m_buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
 
     auto* layout = new QVBoxLayout(this);
     layout->addLayout(body);
@@ -66,4 +69,41 @@ std::vector<ColumnDef> ColumnManagerDialog::columns() const {
         out.push_back(c);
     }
     return out;
+}
+
+void ColumnManagerDialog::addColumnRow() {
+    const int r = m_table->rowCount();
+    m_table->insertRow(r);
+    m_table->setItem(r, 0, new QTableWidgetItem(tr("新列")));
+    m_table->setItem(r, 1, new QTableWidgetItem(QStringLiteral("col%1").arg(r + 1)));
+    m_table->setItem(r, 2, new QTableWidgetItem(QStringLiteral("text")));
+    m_table->selectRow(r);
+}
+
+void ColumnManagerDialog::removeSelectedColumnRow() {
+    const int r = m_table->currentRow();
+    if (r >= 0) m_table->removeRow(r);
+}
+
+void ColumnManagerDialog::moveSelectedUp() {
+    const int r = m_table->currentRow();
+    if (r <= 0) return;
+    SwapRows(r, r - 1);
+    m_table->selectRow(r - 1);
+}
+
+void ColumnManagerDialog::moveSelectedDown() {
+    const int r = m_table->currentRow();
+    if (r < 0 || r >= m_table->rowCount() - 1) return;
+    SwapRows(r, r + 1);
+    m_table->selectRow(r + 1);
+}
+
+void ColumnManagerDialog::SwapRows(int a, int b) {
+    for (int col = 0; col < m_table->columnCount(); ++col) {
+        QTableWidgetItem* ia = m_table->takeItem(a, col);
+        QTableWidgetItem* ib = m_table->takeItem(b, col);
+        m_table->setItem(a, col, ib);
+        m_table->setItem(b, col, ia);
+    }
 }

@@ -28,11 +28,13 @@ public:
     void setModel(QAbstractItemModel* model);
     void setTemplateText(const QString& text);
     QString templateText() const;
+    void retranslateUi();   // 语言切换后刷新本页文案（含导出子菜单标题）
 
 private:
     QTableView* m_table = nullptr;
     QPlainTextEdit* m_templateEdit = nullptr;
     QMenu* m_contextMenu = nullptr;
+    QMenu* m_exportMenu = nullptr;
     QAction* m_exportCsvAction = nullptr;
     QAction* m_exportDbAction = nullptr;
     QAction* m_exportTxtAction = nullptr;

@@ -41,8 +41,14 @@ bool SignatureTableModel::setData(const QModelIndex& index, const QVariant& valu
 QVariant SignatureTableModel::headerData(int section, Qt::Orientation orientation, int role) const {
     if (role != Qt::DisplayRole) return {};
     if (orientation == Qt::Horizontal) {
-        if (section < static_cast<int>(m_columns.size())) return m_columns[static_cast<size_t>(section)].title;
-        return {};
+        if (section < 0 || section >= static_cast<int>(m_columns.size())) return {};
+        // 内置列标题经 tr() 随语言切换；自定义列沿用其标题
+        const QString& key = m_columns[static_cast<size_t>(section)].key;
+        if (key == QStringLiteral("name")) return tr("名称");
+        if (key == QStringLiteral("pattern")) return tr("特征码");
+        if (key == QStringLiteral("note")) return tr("备注");
+        if (key == QStringLiteral("process")) return tr("进程");
+        return m_columns[static_cast<size_t>(section)].title;
     }
     return section + 1;
 }
@@ -75,12 +81,36 @@ void SignatureTableModel::setRows(const std::vector<SignatureRow>& rows) {
 
 std::vector<SignatureRow> SignatureTableModel::rows() const { return m_rows; }
 
-void SignatureTableModel::addRow() {
+namespace {
+// 构造一个空行；若存在键为 process 的列且 processDefault 非空，则填入该列
+SignatureRow MakeEmptyRow(const std::vector<ColumnDef>& columns, const QString& processDefault) {
+    SignatureRow row;
+    for (size_t i = 0; i < columns.size(); ++i) row.cells << QString();
+    if (!processDefault.isEmpty()) {
+        for (size_t i = 0; i < columns.size(); ++i) {
+            if (columns[i].key == QStringLiteral("process")) {
+                row.cells[static_cast<int>(i)] = processDefault;
+                break;
+            }
+        }
+    }
+    return row;
+}
+} // namespace
+
+void SignatureTableModel::addRow(const QString& processDefault) {
     const int r = static_cast<int>(m_rows.size());
     beginInsertRows(QModelIndex(), r, r);
-    SignatureRow row;
-    for (size_t i = 0; i < m_columns.size(); ++i) row.cells << QString();
-    m_rows.push_back(row);
+    m_rows.push_back(MakeEmptyRow(m_columns, processDefault));
+    endInsertRows();
+}
+
+void SignatureTableModel::addRows(int count, const QString& processDefault) {
+    if (count <= 0) return;
+    const int first = static_cast<int>(m_rows.size());
+    const int last = first + count - 1;
+    beginInsertRows(QModelIndex(), first, last);
+    for (int i = 0; i < count; ++i) m_rows.push_back(MakeEmptyRow(m_columns, processDefault));
     endInsertRows();
 }
 
@@ -109,4 +139,9 @@ QString SignatureTableModel::valueAt(int row, const QString& key) const {
     if (col < 0) return {};
     const QStringList& cells = m_rows[static_cast<size_t>(row)].cells;
     return (col < cells.size()) ? cells[col] : QString();
+}
+
+void SignatureTableModel::retranslate() {
+    const int last = static_cast<int>(m_columns.size()) - 1;
+    if (last >= 0) emit headerDataChanged(Qt::Horizontal, 0, last);
 }

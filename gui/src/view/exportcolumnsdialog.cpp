@@ -4,6 +4,7 @@
 #include <QDialogButtonBox>
 #include <QListWidget>
 #include <QListWidgetItem>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 ExportColumnsDialog::ExportColumnsDialog(QWidget* parent) : QDialog(parent) {
@@ -12,6 +13,8 @@ ExportColumnsDialog::ExportColumnsDialog(QWidget* parent) : QDialog(parent) {
 
     m_list = new QListWidget(this);
     m_buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    m_buttons->button(QDialogButtonBox::Ok)->setText(tr("确定"));
+    m_buttons->button(QDialogButtonBox::Cancel)->setText(tr("取消"));
 
     auto* layout = new QVBoxLayout(this);
     layout->addWidget(m_list);

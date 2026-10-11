@@ -14,7 +14,7 @@ if(NOT MSVC)
 endif()
 
 # Qt6（Debug 共享 / Release 静态），经 CMAKE_PREFIX_PATH 定位
-find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Test)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Test LinguistTools)
 
 # 判定静态 Qt
 get_target_property(_qt_core_type Qt6::Core TYPE)
@@ -68,7 +68,40 @@ set(GUI_VM_SOURCES
 
 enable_testing()
 
+# i18n：由 .ts 生成 .qm（lrelease），并以资源前缀 /i18n 嵌入目标，供 QTranslator 运行期装载。
+# 采用自定义命令而非 qt_add_translations：可对生产与测试目标复用同一批 .qm，且构建确定。
+set(GUI_TS_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/i18n/psig_gui_zh_CN.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/i18n/psig_gui_en_US.ts
+)
+set(GUI_QM_FILES)
+foreach(_ts IN LISTS GUI_TS_FILES)
+    get_filename_component(_base "${_ts}" NAME_WE)
+    set(_qm "${CMAKE_CURRENT_BINARY_DIR}/i18n/${_base}.qm")
+    add_custom_command(OUTPUT "${_qm}"
+        COMMAND Qt6::lrelease "${_ts}" -qm "${_qm}"
+        DEPENDS "${_ts}"
+        COMMENT "lrelease ${_base}.qm"
+        VERBATIM)
+    list(APPEND GUI_QM_FILES "${_qm}")
+endforeach()
+
+# 供子目录（测试目标）复用
+set(GUI_QM_FILES "${GUI_QM_FILES}" CACHE INTERNAL "Generated .qm files")
+
+# 将翻译资源嵌入目标（资源路径 /i18n/<name>.qm）；别名在调用目录作用域设置。
+function(gui_embed_i18n target resname)
+    foreach(_qm IN LISTS GUI_QM_FILES)
+        get_filename_component(_b "${_qm}" NAME)
+        set_source_files_properties("${_qm}" PROPERTIES QT_RESOURCE_ALIAS "${_b}")
+    endforeach()
+    qt_add_resources(${target} ${resname} PREFIX "/i18n" FILES ${GUI_QM_FILES})
+endfunction()
+
 add_subdirectory(src)
 add_subdirectory(test/target)
 add_subdirectory(test/unit)
 add_subdirectory(test/integration)
+
+# 生产目标嵌入翻译资源
+gui_embed_i18n(psig_gui psig_gui_i18n)

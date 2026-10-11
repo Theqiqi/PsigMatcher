@@ -10,11 +10,13 @@
 
 SignatureEditorPage::SignatureEditorPage(QWidget* parent) : QWidget(parent) {
     // 行操作统一收敛到表格右键菜单（不再使用按钮条）
-    m_addRowAction = new QAction(tr("新增行"), this);
-    m_deleteRowsAction = new QAction(tr("删除选中行"), this);
-    m_manageColumnsAction = new QAction(tr("列管理"), this);
+    m_addRowAction = new QAction(this);
+    m_addRowsAction = new QAction(this);
+    m_deleteRowsAction = new QAction(this);
+    m_manageColumnsAction = new QAction(this);
     m_contextMenu = new QMenu(this);
     m_contextMenu->addAction(m_addRowAction);
+    m_contextMenu->addAction(m_addRowsAction);
     m_contextMenu->addAction(m_deleteRowsAction);
     m_contextMenu->addSeparator();
     m_contextMenu->addAction(m_manageColumnsAction);
@@ -28,6 +30,8 @@ SignatureEditorPage::SignatureEditorPage(QWidget* parent) : QWidget(parent) {
 
     auto* layout = new QVBoxLayout(this);
     layout->addWidget(m_table);
+
+    retranslateUi();
 }
 
 void SignatureEditorPage::setModel(QAbstractItemModel* model) { m_table->setModel(model); }
@@ -36,4 +40,11 @@ void SignatureEditorPage::selectRow(int row) {
     if (!m_table->model() || row < 0 || row >= m_table->model()->rowCount()) return;
     m_table->selectRow(row);
     m_table->scrollTo(m_table->model()->index(row, 0));
+}
+
+void SignatureEditorPage::retranslateUi() {
+    m_addRowAction->setText(tr("新增一行"));
+    m_addRowsAction->setText(tr("新增多行…"));
+    m_deleteRowsAction->setText(tr("删除选中行"));
+    m_manageColumnsAction->setText(tr("列管理"));
 }

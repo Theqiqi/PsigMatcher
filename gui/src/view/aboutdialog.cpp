@@ -3,6 +3,7 @@
 
 #include <QDialogButtonBox>
 #include <QLabel>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
@@ -15,6 +16,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
     m_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
     m_buttons = new QDialogButtonBox(QDialogButtonBox::Ok, this);
+    m_buttons->button(QDialogButtonBox::Ok)->setText(tr("确定"));
 
     auto* layout = new QVBoxLayout(this);
     layout->addWidget(m_label);

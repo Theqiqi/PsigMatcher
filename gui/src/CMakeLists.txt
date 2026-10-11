@@ -22,3 +22,6 @@ target_link_libraries(psig_gui PRIVATE
 if(PSIG_QT_STATIC)
     qt_import_plugins(psig_gui INCLUDE_BY_TYPE platforms Qt6::QWindowsIntegrationPlugin)
 endif()
+
+# Release 去掉控制台窗口（WIN32 子系统）；Debug 保留控制台便于调试
+set_target_properties(psig_gui PROPERTIES WIN32_EXECUTABLE $<CONFIG:Release>)

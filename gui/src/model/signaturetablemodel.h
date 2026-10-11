@@ -24,9 +24,11 @@ public:
     std::vector<ColumnDef> columns() const;
     void setRows(const std::vector<SignatureRow>& rows);
     std::vector<SignatureRow> rows() const;
-    void addRow();
+    void addRow(const QString& processDefault = QString());
+    void addRows(int count, const QString& processDefault = QString());
     void removeRows(const std::vector<int>& rows);
     QString valueAt(int row, const QString& key) const;
+    void retranslate();   // 语言切换后刷新表头
 
 private:
     int columnIndex(const QString& key) const;
