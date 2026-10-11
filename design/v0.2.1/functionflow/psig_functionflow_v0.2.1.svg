@@ -1,40 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="980" height="420" viewBox="0 0 980 420" font-family="Segoe UI, Arial, sans-serif" font-size="12">
-  <text x="20" y="28" font-size="18" font-weight="bold">psig 功能流程图 v0.2.0（增量）</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="480" viewBox="0 0 1040 480" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+  <text x="20" y="28" font-size="18" font-weight="bold">psig 功能流程图 v0.2.1（增量：CSV BOM / 进程图标）</text>
 
-  <rect x="30" y="60" width="200" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
-  <text x="130" y="82" text-anchor="middle">ExportSignaturesCsv/Db</text>
-  <text x="130" y="100" text-anchor="middle">（写 templateText）</text>
+  <!-- API 层 -->
+  <rect x="30" y="60" width="210" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="135" y="82" text-anchor="middle">ExportSignaturesCsv</text>
+  <text x="135" y="100" text-anchor="middle">/ ExportResultsCsv</text>
 
-  <rect x="30" y="150" width="200" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
-  <text x="130" y="172" text-anchor="middle">ImportSignaturesCsv/Db</text>
-  <text x="130" y="190" text-anchor="middle">（读 templateText）</text>
+  <rect x="30" y="150" width="210" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="135" y="172" text-anchor="middle">ImportSignaturesCsv</text>
 
-  <rect x="300" y="60" width="200" height="52" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
-  <text x="400" y="82" text-anchor="middle">EncodeTemplateRecord</text>
-  <text x="400" y="100" text-anchor="middle">#psig-template,escaped</text>
+  <rect x="30" y="250" width="210" height="52" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="135" y="272" text-anchor="middle">ProcessIcon(pid)</text>
+  <text x="135" y="290" text-anchor="middle">DefaultProcessIcon()</text>
 
-  <rect x="300" y="150" width="200" height="52" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
-  <text x="400" y="172" text-anchor="middle">ParseTemplateRecord</text>
-  <text x="400" y="190" text-anchor="middle">(text→tmpl,rest)</text>
+  <!-- algorithm 层 -->
+  <rect x="330" y="60" width="220" height="52" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="440" y="82" text-anchor="middle">Utf8Bom()</text>
+  <text x="440" y="100" text-anchor="middle">(拼接于文件最前)</text>
 
-  <rect x="580" y="60" width="180" height="52" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
-  <text x="670" y="82" text-anchor="middle">ResultColumnDefs</text>
-  <text x="670" y="100" text-anchor="middle">(key,title)×9</text>
+  <rect x="330" y="150" width="220" height="52" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="440" y="172" text-anchor="middle">HasUtf8Bom / StripUtf8Bom</text>
+  <text x="440" y="190" text-anchor="middle">(读入后剥离)</text>
 
-  <rect x="580" y="150" width="180" height="52" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
-  <text x="670" y="172" text-anchor="middle">FilterResultColumns</text>
-  <text x="670" y="190" text-anchor="middle">(keys→headers,rows)</text>
+  <!-- atomic 层 -->
+  <rect x="640" y="250" width="240" height="52" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="760" y="272" text-anchor="middle">ExtractProcessIcon(pid)</text>
+  <text x="760" y="290" text-anchor="middle">ExtractDefaultIcon()</text>
 
-  <rect x="800" y="105" width="160" height="52" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
-  <text x="880" y="127" text-anchor="middle">ExportResultsCsv/Db/Txt</text>
-  <text x="880" y="145" text-anchor="middle">(opt: tmpl+columns)</text>
+  <!-- 产出 -->
+  <rect x="640" y="60" width="240" height="52" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="760" y="82" text-anchor="middle">CSV 文件（首 3 字节 EF BB BF）</text>
 
-  <line x1="230" y1="86" x2="300" y2="86" stroke="#555" marker-end="url(#b)"/>
-  <line x1="230" y1="176" x2="300" y2="176" stroke="#555" marker-end="url(#b)"/>
-  <line x1="500" y1="86" x2="580" y2="86" stroke="#555" marker-end="url(#b)"/>
-  <line x1="500" y1="176" x2="580" y2="176" stroke="#555" marker-end="url(#b)"/>
-  <line x1="760" y1="86" x2="800" y2="120" stroke="#555" marker-end="url(#b)"/>
-  <line x1="760" y1="176" x2="800" y2="142" stroke="#555" marker-end="url(#b)"/>
+  <rect x="640" y="150" width="240" height="52" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="760" y="172" text-anchor="middle">Table（不受 BOM 污染）</text>
+
+  <rect x="940" y="250" width="90" height="52" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="985" y="272" text-anchor="middle">IconBitmap</text>
+  <text x="985" y="290" text-anchor="middle">(BGRA)</text>
+
+  <line x1="240" y1="86" x2="330" y2="86" stroke="#555" marker-end="url(#b)"/>
+  <line x1="240" y1="176" x2="330" y2="176" stroke="#555" marker-end="url(#b)"/>
+  <line x1="240" y1="276" x2="640" y2="276" stroke="#555" marker-end="url(#b)"/>
+  <line x1="550" y1="86" x2="640" y2="86" stroke="#555" marker-end="url(#b)"/>
+  <line x1="550" y1="176" x2="640" y2="176" stroke="#555" marker-end="url(#b)"/>
+  <line x1="880" y1="276" x2="940" y2="276" stroke="#555" marker-end="url(#b)"/>
 
   <defs>
     <marker id="b" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">

@@ -1,32 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" font-family="Segoe UI, Arial, sans-serif" font-size="13">
-  <text x="20" y="28" font-size="18" font-weight="bold">psig 业务流程图 v0.2.0（增量：模板文本 / 自定义列 / 列选择）</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+  <text x="20" y="28" font-size="18" font-weight="bold">psig 业务流程图 v0.2.1（增量：CSV BOM / 进程图标）</text>
 
-  <rect x="40" y="60" width="180" height="44" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
-  <text x="130" y="87" text-anchor="middle">特征码表 Table</text>
+  <!-- CSV 导出加 BOM -->
+  <rect x="40" y="60" width="200" height="44" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="140" y="87" text-anchor="middle">导出特征码/结果 CSV</text>
 
-  <rect x="40" y="140" width="180" height="44" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
-  <text x="130" y="167" text-anchor="middle">表级模板 templateText</text>
+  <rect x="320" y="60" width="220" height="44" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="430" y="87" text-anchor="middle">最前拼接 UTF-8 BOM</text>
 
-  <rect x="300" y="100" width="200" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
-  <text x="400" y="127" text-anchor="middle">导出 CSV/DB（含模板）</text>
+  <rect x="620" y="60" width="260" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="750" y="87" text-anchor="middle">文件首 EF BB BF（Excel 不乱码）</text>
 
-  <rect x="300" y="180" width="200" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
-  <text x="400" y="207" text-anchor="middle">导入 CSV/DB（读回模板）</text>
+  <!-- CSV 导入剥 BOM -->
+  <rect x="40" y="150" width="200" height="44" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="140" y="177" text-anchor="middle">导入特征码 CSV</text>
 
-  <rect x="580" y="60" width="200" height="44" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
-  <text x="680" y="87" text-anchor="middle">匹配结果 MatchResult</text>
+  <rect x="320" y="150" width="220" height="44" rx="8" fill="#fff3e0" stroke="#ef6c00"/>
+  <text x="430" y="177" text-anchor="middle">识别并剥离 BOM</text>
 
-  <rect x="580" y="140" width="200" height="44" rx="8" fill="#fce4ec" stroke="#ad1457"/>
-  <text x="680" y="167" text-anchor="middle">自定义列 custom</text>
+  <rect x="620" y="150" width="260" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="750" y="177" text-anchor="middle">Table（首列/模板不受污染）</text>
 
-  <rect x="580" y="220" width="200" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
-  <text x="680" y="247" text-anchor="middle">结果导出（模板+选列+custom）</text>
+  <!-- 进程图标 -->
+  <rect x="40" y="250" width="200" height="44" rx="8" fill="#e3f2fd" stroke="#1565c0"/>
+  <text x="140" y="277" text-anchor="middle">pid</text>
 
-  <line x1="220" y1="82" x2="300" y2="120" stroke="#555" marker-end="url(#a)"/>
-  <line x1="220" y1="160" x2="300" y2="200" stroke="#555" marker-end="url(#a)"/>
-  <line x1="500" y1="120" x2="580" y2="82" stroke="#555" marker-end="url(#a)"/>
-  <line x1="680" y1="104" x2="680" y2="140" stroke="#555" marker-end="url(#a)"/>
-  <line x1="680" y1="184" x2="680" y2="220" stroke="#555" marker-end="url(#a)"/>
+  <rect x="320" y="250" width="220" height="44" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="430" y="277" text-anchor="middle">Win32 提取图标 → BGRA</text>
+
+  <rect x="620" y="250" width="260" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="750" y="277" text-anchor="middle">IconBitmap（可建 QImage）</text>
+
+  <!-- 默认图标 -->
+  <rect x="320" y="340" width="220" height="44" rx="8" fill="#f3e5f5" stroke="#6a1b9a"/>
+  <text x="430" y="367" text-anchor="middle">系统默认 exe 图标 → BGRA</text>
+
+  <rect x="620" y="340" width="260" height="44" rx="8" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="750" y="367" text-anchor="middle">IconBitmap（无图标回退）</text>
+
+  <line x1="240" y1="82" x2="320" y2="82" stroke="#555" marker-end="url(#a)"/>
+  <line x1="540" y1="82" x2="620" y2="82" stroke="#555" marker-end="url(#a)"/>
+  <line x1="240" y1="172" x2="320" y2="172" stroke="#555" marker-end="url(#a)"/>
+  <line x1="540" y1="172" x2="620" y2="172" stroke="#555" marker-end="url(#a)"/>
+  <line x1="240" y1="272" x2="320" y2="272" stroke="#555" marker-end="url(#a)"/>
+  <line x1="540" y1="272" x2="620" y2="272" stroke="#555" marker-end="url(#a)"/>
+  <line x1="540" y1="362" x2="620" y2="362" stroke="#555" marker-end="url(#a)"/>
 
   <defs>
     <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
