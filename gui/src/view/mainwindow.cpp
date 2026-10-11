@@ -31,6 +31,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 }
 
 void MainWindow::buildMenuAndToolbar() {
+    createActions();
+    applyActionIconsAndShortcuts();
+    buildMenus();
+    buildToolbar();
+}
+
+void MainWindow::createActions() {
     m_importAction = new QAction(this);
     m_exportAction = new QAction(this);
     m_refreshAction = new QAction(this);
@@ -53,6 +60,18 @@ void MainWindow::buildMenuAndToolbar() {
     m_clearLogAction = new QAction(this);    // C-08：仅在日志右键菜单使用
     m_aboutAction = new QAction(this);
 
+    // 语言动作 + 互斥组
+    m_langGroup = new QActionGroup(this);
+    m_langZhAction = new QAction(this);
+    m_langEnAction = new QAction(this);
+    m_langSystemAction = new QAction(this);
+    for (QAction* a : {m_langZhAction, m_langEnAction, m_langSystemAction}) {
+        a->setCheckable(true);
+        m_langGroup->addAction(a);
+    }
+}
+
+void MainWindow::applyActionIconsAndShortcuts() {
     // 图标（用标准图标，替代纯文字；tooltip 保留文字）
     QStyle* st = style();
     m_importAction->setIcon(st->standardIcon(QStyle::SP_DialogOpenButton));
@@ -81,7 +100,9 @@ void MainWindow::buildMenuAndToolbar() {
     m_showResultAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+3")));
     m_clearLogAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+L")));
     m_aboutAction->setShortcut(QKeySequence(Qt::Key_F1));
+}
 
+void MainWindow::buildMenus() {
     // 菜单按显示顺序创建：文件 / 编辑 / 扫描 / 视图 / 语言 / 帮助
     m_fileMenu = menuBar()->addMenu(QString());
     m_fileMenu->addAction(m_importAction);
@@ -111,14 +132,6 @@ void MainWindow::buildMenuAndToolbar() {
     m_viewMenu->addAction(m_toggleLogAction);
 
     // 「语言」菜单：位于「视图」与「帮助」之间，三项互斥
-    m_langGroup = new QActionGroup(this);
-    m_langZhAction = new QAction(this);
-    m_langEnAction = new QAction(this);
-    m_langSystemAction = new QAction(this);
-    for (QAction* a : {m_langZhAction, m_langEnAction, m_langSystemAction}) {
-        a->setCheckable(true);
-        m_langGroup->addAction(a);
-    }
     m_langMenu = menuBar()->addMenu(QString());
     m_langMenu->addAction(m_langZhAction);
     m_langMenu->addAction(m_langEnAction);
@@ -127,7 +140,9 @@ void MainWindow::buildMenuAndToolbar() {
 
     m_helpMenu = menuBar()->addMenu(QString());
     m_helpMenu->addAction(m_aboutAction);
+}
 
+void MainWindow::buildToolbar() {
     // 主工具栏：图标化；按页显隐
     m_toolbar = addToolBar(QString());
     m_toolbar->setMovable(false);
@@ -264,7 +279,7 @@ void MainWindow::setLanguageChecked(const QString& code) {
 }
 
 void MainWindow::retranslateUi() {
-    setWindowTitle(tr("进程特征码批量匹配器 v0.2.2"));
+    setWindowTitle(tr("进程特征码批量匹配器 v0.2.3"));
 
     m_fileMenu->setTitle(tr("文件(&F)"));
     m_editMenu->setTitle(tr("编辑(&E)"));

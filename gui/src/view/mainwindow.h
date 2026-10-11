@@ -82,6 +82,10 @@ public:
 
 private:
     void buildMenuAndToolbar();
+    void createActions();                  // 创建全部 QAction
+    void applyActionIconsAndShortcuts();   // 设置图标与快捷键
+    void buildMenus();                     // 组装菜单栏
+    void buildToolbar();                   // 组装主工具栏
     void buildCentral();
     void buildStatusAndLog();
     void applyToolbarForPage(int index); // 0=特征码 1=进程 2=结果
