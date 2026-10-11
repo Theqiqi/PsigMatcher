@@ -133,6 +133,7 @@ void MainViewModel::bindGlobalActions() {
     connect(m_view->startScanAction(), &QAction::triggered, this, &MainViewModel::onStartScan);
     connect(m_view->cancelScanAction(), &QAction::triggered, this, &MainViewModel::onCancelScan);
     connect(m_view->manageColumnsAction(), &QAction::triggered, this, &MainViewModel::onManageColumns);
+    connect(m_view->addSignatureRowAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRow);
     connect(m_view->showSignaturePageAction(), &QAction::triggered, m_view, &MainWindow::showSignaturePage);
     connect(m_view->showProcessPageAction(), &QAction::triggered, m_view, &MainWindow::showProcessPage);
     connect(m_view->showResultPageAction(), &QAction::triggered, m_view, &MainWindow::showResultPage);

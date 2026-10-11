@@ -4,6 +4,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QDockWidget>
+#include <QKeySequence>
 #include <QLabel>
 #include <QMenuBar>
 #include <QPlainTextEdit>
@@ -33,6 +34,16 @@ void MainWindow::buildMenuAndToolbar() {
     m_startScanAction = new QAction(tr("开始扫描"), this);
     m_cancelScanAction = new QAction(tr("取消扫描"), this);
     m_manageColumnsAction = new QAction(tr("列管理"), this);
+    m_addRowAction = new QAction(tr("新增行"), this);
+
+    // 键盘快捷键：作为可确定性注入的操作入口（E2E 与快捷键用户）
+    m_importAction->setShortcut(QKeySequence::Open);                            // Ctrl+O
+    m_exportAction->setShortcut(QKeySequence::Save);                            // Ctrl+S
+    m_refreshAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+R")));
+    m_startScanAction->setShortcut(QKeySequence(Qt::Key_F5));
+    m_cancelScanAction->setShortcut(QKeySequence(QStringLiteral("Shift+Esc")));
+    m_manageColumnsAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+M")));
+    m_addRowAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+N")));
 
     QMenu* fileMenu = menuBar()->addMenu(tr("文件(&F)"));
     fileMenu->addAction(m_importAction);
@@ -41,6 +52,7 @@ void MainWindow::buildMenuAndToolbar() {
     fileMenu->addAction(tr("退出"), this, &QWidget::close);
 
     QMenu* editMenu = menuBar()->addMenu(tr("编辑(&E)"));
+    editMenu->addAction(m_addRowAction);
     editMenu->addAction(m_manageColumnsAction);
 
     QMenu* scanMenu = menuBar()->addMenu(tr("扫描(&S)"));
@@ -78,6 +90,10 @@ void MainWindow::buildCentral() {
     m_showProcessAction = new QAction(tr("进程选择"), this);
     m_showResultAction = new QAction(tr("匹配结果"), this);
     m_clearLogAction = new QAction(tr("清空日志"), this);
+    m_showSignatureAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+1")));
+    m_showProcessAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+2")));
+    m_showResultAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+3")));
+    m_clearLogAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+L")));
     QMenu* viewMenu = menuBar()->addMenu(tr("视图(&V)"));
     viewMenu->addAction(m_showSignatureAction);
     viewMenu->addAction(m_showProcessAction);

@@ -29,6 +29,7 @@ public:
     QAction* startScanAction() const { return m_startScanAction; }
     QAction* cancelScanAction() const { return m_cancelScanAction; }
     QAction* manageColumnsAction() const { return m_manageColumnsAction; }
+    QAction* addSignatureRowAction() const { return m_addRowAction; }
 
     // 视图导航动作 getter（供 ViewModel connect）
     QAction* showSignaturePageAction() const { return m_showSignatureAction; }
@@ -69,6 +70,7 @@ private:
     QAction* m_startScanAction = nullptr;
     QAction* m_cancelScanAction = nullptr;
     QAction* m_manageColumnsAction = nullptr;
+    QAction* m_addRowAction = nullptr;
     QAction* m_showSignatureAction = nullptr;
     QAction* m_showProcessAction = nullptr;
     QAction* m_showResultAction = nullptr;
