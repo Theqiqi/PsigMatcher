@@ -1,7 +1,7 @@
 # psig_gui E2E 测试用例清单
 
-- 版本：v0.2.1
-- 前置：`design/v0.2.1/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
+- 版本：v0.2.2
+- 前置：`design/v0.2.2/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
 - 产物对应：`drive.ps1`（驱动）、`analyze.py`（断言）、`verify_all.sh`（编排）
 - 说明：每个用例的操作步骤均对应真实可执行入口（菜单/工具栏/快捷键）；驱动脚本按步骤注入，断言脚本按预期断言，脚本与用例一一对应。
 
@@ -11,6 +11,17 @@
 - 注入：`keybd_event`（Win32 原始输入）注入快捷键；`PostMessage(WM_CLOSE)` 关闭窗口。
 - 截图：客户区（排除标题栏），保存至 `gui/out/verify/shot_xx.png`。
 - 快捷键入口：Ctrl+1/2/3 切页（视图菜单）、Ctrl+N 新增行、Ctrl+R 刷新进程、F5 扫描、Ctrl+M 列管理、Ctrl+O/Ctrl+S 导入/导出、F1 关于。
+
+## v0.2.2 变更点（相对 v0.2.1）
+
+- C-03：进程列表中空名进程（如 PID 0/4 系统进程）显示兜底名 `System Idle Process` / `System` / `Unknown Process`（在 `shot_01_start.png` 可见）。
+- C-07：进程页列宽调整 — PID = 基准、Name = PID×2、Accessible = PID、Path 占剩余（仍可手动拖动）。
+- C-08：视图菜单新增「日志」开关（显隐 History Log dock）；「清空日志」改为仅在日志窗口右键菜单中。
+- C-09：仅对 `accessible==true` 的进程异步取图标；无权限进程不显示图标（不阻止选中）。
+- 窗口标题更新为「进程特征码批量匹配器 v0.2.2」（默认跟随系统语言 → 英文显示 `Process Signature Batch Matcher v0.2.2`）。
+- 未新增 E2E 用例；上述改动点的非 E2E 部分由 GUI 单元测试 + psig 集成测试覆盖（详见 `design/v0.2.2/gui/32_代码质量审查结果.md` 与 `design/v0.2.2/gproto/77_静态库完成契约.md`）。
+
+> 说明：语言切换（C-02）无独立快捷键，其正确性由单元测试（`ViewModel.ApplyLanguageSwitchesText`、`ViewModel.SignatureHeadersFollowLanguageExceptCustom`）与集成测试覆盖；E2E 侧重真实窗口渲染与流程联通。
 
 ## v0.2.1 变更点（相对 v0.2.0）
 
