@@ -11,6 +11,7 @@
 #include "algorithm/result_columns.h"
 #include "atomic/file_io.h"
 #include "atomic/sqlite_io.h"
+#include "atomic/win_icon.h"
 #include "atomic/win_process.h"
 #include "data/codec.h"
 
@@ -107,6 +108,24 @@ std::vector<ProcessInfo> EnumerateProcesses() {
     std::sort(result.begin(), result.end(),
               [](const ProcessInfo& a, const ProcessInfo& b) { return a.pid < b.pid; });
     return result;
+}
+
+namespace {
+IconBitmap ToPublicBitmap(atomic::RawBitmap&& raw) {
+    IconBitmap out;
+    out.width = raw.width;
+    out.height = raw.height;
+    out.pixels = std::move(raw.pixels);
+    return out;
+}
+} // namespace
+
+IconBitmap ProcessIcon(uint32_t pid) {
+    return ToPublicBitmap(atomic::ExtractProcessIcon(pid));
+}
+
+IconBitmap DefaultProcessIcon() {
+    return ToPublicBitmap(atomic::ExtractDefaultIcon());
 }
 
 Pattern ParsePattern(const std::string& raw, const std::string& name) {
@@ -235,6 +254,8 @@ Table ImportSignaturesCsv(const std::string& path, std::string& err) {
         err = "无法读取文件: " + path;
         return table;
     }
+    // 剥离文件头 UTF-8 BOM（若有），避免污染首个表头/模板记录
+    text = algorithm::StripUtf8Bom(text);
     // 前置模板记录（若存在）
     std::string tmpl, rest;
     if (algorithm::ParseTemplateRecord(text, tmpl, rest)) {
@@ -309,7 +330,8 @@ bool ExportSignaturesCsv(const std::string& path, const Table& table, std::strin
     for (const auto& c : table.columns) headers.push_back(c.title);
     std::vector<std::vector<std::string>> rows;
     for (const auto& r : table.rows) rows.push_back(r.cells);
-    std::string text = algorithm::EncodeTemplateRecord(table.templateText) +
+    std::string text = algorithm::Utf8Bom() +
+                       algorithm::EncodeTemplateRecord(table.templateText) +
                        algorithm::SerializeCsv(headers, rows);
     if (!atomic::WriteTextFile(path, text)) {
         err = "无法写入文件: " + path;
@@ -389,7 +411,8 @@ bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& r
     for (const auto& m : results) rows.push_back(ResultRowValues(m));
     std::vector<std::string> headers = ResultHeaders();
     algorithm::FilterResultColumns(options.columns, headers, rows);
-    std::string text = algorithm::EncodeTemplateRecord(options.templateText) +
+    std::string text = algorithm::Utf8Bom() +
+                       algorithm::EncodeTemplateRecord(options.templateText) +
                        algorithm::SerializeCsv(headers, rows);
     if (!atomic::WriteTextFile(path, text)) {
         err = "无法写入文件: " + path;

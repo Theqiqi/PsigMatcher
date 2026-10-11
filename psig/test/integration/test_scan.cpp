@@ -305,3 +305,69 @@ TEST(Integration, ExportResultsOptionsAndCustom) {
     DeleteFileA(db.c_str());
     DeleteFileA(txt.c_str());
 }
+
+// CSV 导出写 UTF-8 BOM（特征码表与结果）
+TEST(Integration, CsvExportHasUtf8Bom) {
+    psig::Table t;
+    t.columns = psig::BuiltinSignatureColumns();
+    t.rows = {{{"p1", "AA BB", "n1"}}};
+    std::string err;
+    std::string sigCsv = TempPath("psig_bom_sig.csv");
+    ASSERT_TRUE(psig::ExportSignaturesCsv(sigCsv, t, err)) << err;
+    const std::string sig = ReadAll(sigCsv);
+    ASSERT_GE(sig.size(), 3u);
+    EXPECT_EQ(static_cast<unsigned char>(sig[0]), 0xEFu);
+    EXPECT_EQ(static_cast<unsigned char>(sig[1]), 0xBBu);
+    EXPECT_EQ(static_cast<unsigned char>(sig[2]), 0xBFu);
+    DeleteFileA(sigCsv.c_str());
+
+    std::vector<psig::MatchResult> results;
+    psig::MatchResult m;
+    m.patternName = "p1";
+    m.pid = 1;
+    m.matchedBytes = "AA BB";
+    results.push_back(m);
+    std::string resCsv = TempPath("psig_bom_res.csv");
+    ASSERT_TRUE(psig::ExportResultsCsv(resCsv, results, err)) << err;
+    const std::string res = ReadAll(resCsv);
+    ASSERT_GE(res.size(), 3u);
+    EXPECT_EQ(static_cast<unsigned char>(res[0]), 0xEFu);
+    EXPECT_EQ(static_cast<unsigned char>(res[1]), 0xBBu);
+    EXPECT_EQ(static_cast<unsigned char>(res[2]), 0xBFu);
+    DeleteFileA(resCsv.c_str());
+}
+
+// 带 BOM 的 CSV 往返：首列表头不被 BOM 污染
+TEST(Integration, CsvBomRoundTripHeaderClean) {
+    psig::Table t;
+    t.columns = psig::BuiltinSignatureColumns(); // 首列表头为「名称」
+    t.rows = {{{"p1", "AA BB", "n1"}}};
+    std::string err;
+    std::string path = TempPath("psig_bom_rt.csv");
+    ASSERT_TRUE(psig::ExportSignaturesCsv(path, t, err)) << err;
+    psig::Table back = psig::ImportSignaturesCsv(path, err);
+    ASSERT_EQ(back.columns.size(), 3u) << err;
+    EXPECT_EQ(back.columns[0].title, "名称");
+    ASSERT_EQ(back.rows.size(), 1u);
+    EXPECT_EQ(back.rows[0].cells[0], "p1");
+    DeleteFileA(path.c_str());
+}
+
+// 进程图标 API：默认图标有效；不存在的 pid 返回 invalid 且不崩溃
+TEST(Integration, ProcessIconApis) {
+    psig::IconBitmap def = psig::DefaultProcessIcon();
+    EXPECT_TRUE(def.valid());
+    EXPECT_GT(def.width, 0);
+    EXPECT_GT(def.height, 0);
+    EXPECT_EQ(def.pixels.size(), static_cast<size_t>(def.width) * def.height * 4);
+
+    // 不存在的 pid → invalid（不抛异常）
+    psig::IconBitmap none = psig::ProcessIcon(0xFFFFFFFEu);
+    EXPECT_FALSE(none.valid());
+
+    // 自身进程：不要求一定有图标，但调用不应崩溃；若有效则尺寸一致
+    psig::IconBitmap self = psig::ProcessIcon(GetCurrentProcessId());
+    if (self.valid()) {
+        EXPECT_EQ(self.pixels.size(), static_cast<size_t>(self.width) * self.height * 4);
+    }
+}

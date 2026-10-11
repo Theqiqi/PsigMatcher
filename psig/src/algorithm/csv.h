@@ -28,4 +28,14 @@ std::string EncodeTemplateRecord(const std::string& tmpl);
 // 否则 tmpl 置空、rest=text、返回 false。
 bool ParseTemplateRecord(const std::string& text, std::string& tmpl, std::string& rest);
 
+// UTF-8 BOM（字节序标记）：返回 3 字节 "\xEF\xBB\xBF"。
+// 用途：CSV 导出置于文件最前，使 Excel 等按 UTF-8 解析中文表头。
+std::string Utf8Bom();
+
+// 判断文本是否以 UTF-8 BOM 开头。
+bool HasUtf8Bom(const std::string& text);
+
+// 若文本以 UTF-8 BOM 开头则返回去掉 BOM 的文本，否则原样返回。
+std::string StripUtf8Bom(const std::string& text);
+
 } // namespace psig::algorithm

@@ -69,3 +69,35 @@ TEST(TemplateRecord, AbsentRecord) {
     auto t = ParseCsv(rest);
     ASSERT_EQ(t.rows.size(), 1u);
 }
+
+TEST(Utf8Bom, ConstantAndDetect) {
+    const std::string bom = Utf8Bom();
+    ASSERT_EQ(bom.size(), 3u);
+    EXPECT_EQ(static_cast<unsigned char>(bom[0]), 0xEFu);
+    EXPECT_EQ(static_cast<unsigned char>(bom[1]), 0xBBu);
+    EXPECT_EQ(static_cast<unsigned char>(bom[2]), 0xBFu);
+    EXPECT_TRUE(HasUtf8Bom(bom + "abc"));
+    EXPECT_FALSE(HasUtf8Bom("abc"));
+    EXPECT_FALSE(HasUtf8Bom(""));
+    EXPECT_FALSE(HasUtf8Bom(std::string("\xEF\xBB", 2))); // 不足 3 字节
+}
+
+TEST(Utf8Bom, Strip) {
+    const std::string text = "名称,特征码\r\n";
+    EXPECT_EQ(StripUtf8Bom(Utf8Bom() + text), text);
+    EXPECT_EQ(StripUtf8Bom(text), text); // 无 BOM 原样返回
+}
+
+TEST(Utf8Bom, TemplateRecordAfterBom) {
+    // BOM 位于模板记录之前；剥离后仍能解析模板
+    const std::string tmpl = "模板\n第二行";
+    std::string text = Utf8Bom() + EncodeTemplateRecord(tmpl) +
+                       SerializeCsv({"名称", "特征码"}, {{"p1", "AA BB"}});
+    std::string stripped = StripUtf8Bom(text);
+    std::string got, rest;
+    ASSERT_TRUE(ParseTemplateRecord(stripped, got, rest));
+    EXPECT_EQ(got, tmpl);
+    auto t = ParseCsv(rest);
+    ASSERT_EQ(t.rows.size(), 1u);
+    EXPECT_EQ(t.headers[0], "名称"); // 首列表头未被 BOM 污染
+}

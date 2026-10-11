@@ -12,6 +12,7 @@ add_library(psig STATIC
     algorithm/csv.cpp
     algorithm/result_columns.cpp
     atomic/win_process.cpp
+    atomic/win_icon.cpp
     atomic/file_io.cpp
     atomic/sqlite_io.cpp
     api/psig.cpp
@@ -24,7 +25,10 @@ target_include_directories(psig
     PRIVATE ${CMAKE_SOURCE_DIR}/third_party/sqlite3
 )
 
-# 无外部链接依赖：SQLite 合并源已编入 psig，GUI 只需链接 psig 与 Qt
+# 系统库依赖（图标提取）：PUBLIC 传播给消费方（GUI 经 psig 传递链接）
+target_link_libraries(psig PUBLIC shell32 user32 gdi32)
+
+# SQLite 合并源已编入 psig，GUI 只需链接 psig 与 Qt
 target_compile_definitions(psig PRIVATE
     UNICODE _UNICODE NOMINMAX
     SQLITE_THREADSAFE=1

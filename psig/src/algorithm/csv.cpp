@@ -144,4 +144,17 @@ bool ParseTemplateRecord(const std::string& text, std::string& tmpl, std::string
     return false;
 }
 
+std::string Utf8Bom() { return std::string("\xEF\xBB\xBF"); }
+
+bool HasUtf8Bom(const std::string& text) {
+    return text.size() >= 3 &&
+           static_cast<unsigned char>(text[0]) == 0xEF &&
+           static_cast<unsigned char>(text[1]) == 0xBB &&
+           static_cast<unsigned char>(text[2]) == 0xBF;
+}
+
+std::string StripUtf8Bom(const std::string& text) {
+    return HasUtf8Bom(text) ? text.substr(3) : text;
+}
+
 } // namespace psig::algorithm

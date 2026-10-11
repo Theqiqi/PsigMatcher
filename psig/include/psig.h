@@ -1,5 +1,5 @@
 // psig.h - 公共 API（进程特征码批量匹配静态库）
-// 版本 v0.2.0
+// 版本 v0.2.1
 // 说明：本头文件是 psig 静态库唯一对外契约；GUI 只能经此公共 API 调用静态库能力。
 // 约束：静态库不依赖 Qt；所有公共 API 不抛异常，用返回值/出参表达错误；线程安全。
 #pragma once
@@ -22,6 +22,18 @@ struct ProcessInfo {
     std::wstring name;      // 进程名（如 notepad.exe）
     std::wstring path;      // 可执行文件完整路径（可能为空）
     bool accessible = false; // 是否可用读权限打开（决定能否扫描）
+};
+
+// 图标位图（BGRA，小端 ARGB32，自上而下，stride = width*4）
+// 可直接映射 Qt QImage::Format_ARGB32；width==0 表示无有效图标。
+struct IconBitmap {
+    int width = 0;
+    int height = 0;
+    std::vector<uint8_t> pixels; // 长度 = width*height*4
+    bool valid() const {
+        return width > 0 && height > 0 &&
+               pixels.size() == static_cast<size_t>(width) * height * 4;
+    }
 };
 
 // 特征码模式（解析后）
@@ -98,6 +110,12 @@ struct ScanRequest {
 // 枚举系统进程
 std::vector<ProcessInfo> EnumerateProcesses();
 
+// 提取指定进程可执行文件的图标；取不到返回 valid()==false 的空位图（不抛异常）
+IconBitmap ProcessIcon(uint32_t pid);
+
+// 系统默认可执行文件图标（供无图标进程回退显示）；通常 valid()==true
+IconBitmap DefaultProcessIcon();
+
 // 解析模式串（支持 '48 8B ?? 05'、'488B??05'、'?8 8B A?' 等）
 Pattern ParsePattern(const std::string& raw, const std::string& name);
 
@@ -118,14 +136,17 @@ std::vector<ColumnDef> BuiltinSignatureColumns();
 // ---------------------------------------------------------------------------
 
 // 导入特征码表（CSV / SQLite .db）；失败时置 err 并返回空表
+// CSV 导入会识别并剥离文件头 UTF-8 BOM（若有）。
 Table ImportSignaturesCsv(const std::string& path, std::string& err);
 Table ImportSignaturesDb(const std::string& path, std::string& err);
 
 // 导出特征码表；失败返回 false 并置 err
+// CSV 导出会在文件最前写入 UTF-8 BOM（使 Excel 等正确解析中文表头）。
 bool ExportSignaturesCsv(const std::string& path, const Table& table, std::string& err);
 bool ExportSignaturesDb(const std::string& path, const Table& table, std::string& err);
 
 // 导出匹配结果（CSV / SQLite .db / TXT）；失败返回 false 并置 err
+// CSV 导出会在文件最前写入 UTF-8 BOM。
 // options 可省略（默认全部列、无模板）
 bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& results,
                       std::string& err, const ResultExportOptions& options = {});
