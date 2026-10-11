@@ -1,65 +1,61 @@
-# 17 API 缺失需求（v0.2.0）
+# 17 API 缺失需求（v0.2.1）
 
 > 前置：`16_API充分性审查.md`
 > 目标：逐项列出静态库无法满足的能力、期望公共 API、输入输出、异常要求、验收标准。
 
 ## 缺失能力清单
 
-### M-1：`Table` 表级模板文本 + 特征码 CSV 携带
+### M-1：CSV 导出写 UTF-8 BOM + 导入兼容 BOM
 
-- **期望公共 API**：`psig::Table` 增加字段 `std::string templateText;`；`ImportSignaturesCsv`/`ExportSignaturesCsv` 读写之。
-- **输入**：文件路径；导出时 `Table{columns, rows, templateText}`。
-- **输出**：导入时 `Table.templateText` 回填；导出文件包含模板文本块（置于文件**最前**）。
-- **异常要求**：无模板标记的旧文件 → `templateText` 为空，不报错；文件不可读写 → 置 `err`。
-- **验收标准**：导出含多行模板的 CSV → 重新导入 → `templateText` 逐字一致；旧 CSV（无模板）导入不报错。
+- **期望公共 API**：`ExportSignaturesCsv` / `ExportResultsCsv` 写文件时在**最前**写入 UTF-8 BOM（`EF BB BF`）；`ImportSignaturesCsv` 读入时**剥离**文件头 BOM（若有）。
+- **输入**：文件路径 + 数据（不变）。
+- **输出**：CSV 文件首 3 字节为 `EF BB BF`；导入时 BOM 不进入首个表头/模板记录。
+- **异常要求**：无 BOM 的旧 CSV 仍可正常导入；不可读写置 `err`。
+- **验收标准**：
+  - 导出结果/特征码 CSV → 首 3 字节 = `EF BB BF`；
+  - 含中文表头的 CSV 在 Excel 中打开不乱码；
+  - 导出后重新导入 → 表头/模板/行数据逐字一致（BOM 不污染首列）。
+  - 带模板记录（`#psig-template,…`）时，BOM 在模板记录**之前**，导入时先剥离 BOM 再解析模板记录。
 
-### M-2：`Table` 表级模板文本 + 特征码 DB 携带
+### M-2：进程图标提取
 
-- **期望公共 API**：`ExportSignaturesDb`/`ImportSignaturesDb` 读写模板文本（DB 内新增元数据存储）。
-- **输入/输出**：同 M-1。
-- **异常要求**：旧库（无元数据表）→ 模板为空，不报错。
-- **验收标准**：DB 往返模板一致；旧库兼容。
-
-### M-3：`MatchResult` 自定义列字段
-
-- **期望公共 API**：`psig::MatchResult` 增加字段 `std::string custom;`（自定义列文本）。
-- **输入/输出**：作为结果导出数据源的一部分。
-- **异常要求**：无（默认空串）。
-- **验收标准**：`custom` 值可随结果导出。
-
-### M-4：结果导出携带模板文本
-
-- **期望公共 API**：结果导出 API 接受模板文本参数（如新增 `ResultExportOptions{ std::string templateText; }` 或等价出参）。
-- **输入**：文件路径 + `results` + `templateText`。
-- **输出**：导出文件包含模板（TXT 置于最前；CSV 前置注释块；DB 存入元数据）。
-- **异常要求**：模板为空 → 正常导出。
-- **验收标准**：导出文件可读回模板文本（TXT/CSV 至少可人工核验，DB 可程序读回）。
-
-### M-5：结果导出选择列子集
-
-- **期望公共 API**：结果导出 API 接受列选择参数（列键列表；空=全部）。
-- **输入**：列键列表。
-- **输出**：仅含选中列的导出文件。
-- **异常要求**：空列表按「全部」处理；未知列键忽略或报错（静态库流程定）。
-- **验收标准**：选择子集导出后，文件仅含选中列。
+- **期望公共 API**：
+  ```cpp
+  struct IconBitmap {
+      int width = 0;
+      int height = 0;
+      std::vector<uint8_t> pixels; // BGRA（小端 ARGB32），长度 = width*height*4
+      bool valid() const;
+  };
+  IconBitmap ProcessIcon(uint32_t pid);      // 指定进程图标
+  IconBitmap DefaultProcessIcon();           // 系统默认进程图标
+  ```
+- **输入**：`pid`（`ProcessIcon`）；无（`DefaultProcessIcon`）。
+- **输出**：ARGB/BGRA 位图（尺寸 + 像素字节）；取不到返回 `valid()==false`。
+- **异常要求**：进程不存在/无图标/权限不足/提取失败 → 返回 invalid，**不抛异常**；`DefaultProcessIcon` 始终应可返回（内置或系统默认）。
+- **验收标准**：
+  - 对常见系统进程（如 explorer.exe）返回 `valid()==true` 且 `width>0 && height>0`；
+  - 对不存在 pid 返回 invalid；
+  - `DefaultProcessIcon()` 返回 `valid()==true`；
+  - 位图可直接构造 Qt `QImage::Format_ARGB32`（BGRA 小端）且显示正常。
 
 ## 期望的 API 变更摘要（供静态库流程定稿）
 
 ```cpp
 namespace psig {
-struct Table { std::vector<ColumnDef> columns; std::vector<TableRow> rows;
-               std::string templateText; };              // + templateText
-struct MatchResult { /* …既有… */ std::string custom; };  // + custom
+// M-1：CSV BOM（无签名变化，行为变化；可另加开关但默认写 BOM）
+bool ExportSignaturesCsv(path, table, err);              // 写 UTF-8 BOM
+Table ImportSignaturesCsv(path, err);                    // 剥离 BOM
+bool ExportResultsCsv(path, results, err, options);      // 写 UTF-8 BOM
 
-// 结果导出新增模板与列选择参数（形式由静态库流程定稿，示例）：
-struct ResultExportOptions { std::string templateText; std::vector<std::string> columns; };
-bool ExportResultsCsv(path, results, options, err);
-bool ExportResultsDb (path, results, options, err);
-bool ExportResultsTxt(path, results, options, err);
+// M-2：进程图标
+struct IconBitmap { int width; int height; std::vector<uint8_t> pixels; bool valid() const; };
+IconBitmap ProcessIcon(uint32_t pid);
+IconBitmap DefaultProcessIcon();
 }
 ```
 
 ## 约束满足说明
 
-- 逐项列出缺失能力、期望公共 API、输入输出、异常要求、验收标准（M-1..M-5）。
+- 逐项列出缺失能力、期望公共 API、输入输出、异常要求、验收标准（M-1、M-2）。
 - 静态库完成契约返回前，GUI 停止 ViewModel 层相关编码（不得用模拟数据/假接口）。
