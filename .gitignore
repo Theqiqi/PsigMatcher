@@ -1,0 +1,58 @@
+# Build outputs
+out/
+build/
+cmake-build-*/
+*.obj
+*.o
+*.exe
+*.dll
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.log
+*.idb
+*.res
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+*.ninja
+.ninja_deps
+.ninja_log
+CMakeUserPresets.json
+
+# vcpkg
+vcpkg_installed/
+vcpkg-manifest-install.log
+downloads/
+buildtrees/
+packages/
+ports/
+
+# IDE / editor
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+*.autosave
+
+# Qt generated
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.moc
+.qmake.stash
+
+# E2E artifacts (regenerated each run)
+verify/
+
+# OS
+Thumbs.db
+.DS_Store
