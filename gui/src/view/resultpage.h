@@ -1,10 +1,12 @@
-// view/resultpage.h - 匹配结果页（只画 UI）
+// view/resultpage.h - 匹配结果页（只画 UI，模板文本 + 右键菜单）
 #pragma once
 
 #include <QWidget>
 
 class QTableView;
-class QPushButton;
+class QPlainTextEdit;
+class QMenu;
+class QAction;
 class QAbstractItemModel;
 
 class ResultPage : public QWidget {
@@ -13,17 +15,29 @@ public:
     explicit ResultPage(QWidget* parent = nullptr);
 
     QTableView* table() const { return m_table; }
-    QPushButton* exportCsvBtn() const { return m_exportCsvBtn; }
-    QPushButton* exportDbBtn() const { return m_exportDbBtn; }
-    QPushButton* exportTxtBtn() const { return m_exportTxtBtn; }
-    QPushButton* clearBtn() const { return m_clearBtn; }
+    QPlainTextEdit* templateEdit() const { return m_templateEdit; }
+    QMenu* contextMenu() const { return m_contextMenu; }
+    QAction* exportCsvAction() const { return m_exportCsvAction; }
+    QAction* exportDbAction() const { return m_exportDbAction; }
+    QAction* exportTxtAction() const { return m_exportTxtAction; }
+    QAction* selectColumnsAction() const { return m_selectColumnsAction; }
+    QAction* deleteRowsAction() const { return m_deleteRowsAction; }
+    QAction* fillCustomAction() const { return m_fillCustomAction; }
+    QAction* clearAction() const { return m_clearAction; }
 
     void setModel(QAbstractItemModel* model);
+    void setTemplateText(const QString& text);
+    QString templateText() const;
 
 private:
     QTableView* m_table = nullptr;
-    QPushButton* m_exportCsvBtn = nullptr;
-    QPushButton* m_exportDbBtn = nullptr;
-    QPushButton* m_exportTxtBtn = nullptr;
-    QPushButton* m_clearBtn = nullptr;
+    QPlainTextEdit* m_templateEdit = nullptr;
+    QMenu* m_contextMenu = nullptr;
+    QAction* m_exportCsvAction = nullptr;
+    QAction* m_exportDbAction = nullptr;
+    QAction* m_exportTxtAction = nullptr;
+    QAction* m_selectColumnsAction = nullptr;
+    QAction* m_deleteRowsAction = nullptr;
+    QAction* m_fillCustomAction = nullptr;
+    QAction* m_clearAction = nullptr;
 };

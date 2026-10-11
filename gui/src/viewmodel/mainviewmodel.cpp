@@ -4,14 +4,19 @@
 #include <QAction>
 #include <QDateTime>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QLineEdit>
+#include <QMenu>
 #include <QMessageBox>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTableView>
 #include <QtConcurrent>
 
+#include "view/aboutdialog.h"
 #include "view/columnmanagerdialog.h"
+#include "view/exportcolumnsdialog.h"
 #include "view/mainwindow.h"
 #include "view/processselectionpage.h"
 #include "view/resultpage.h"
@@ -47,6 +52,7 @@ ResultRow toResultRow(const psig::MatchResult& m) {
     r.moduleBase = m.moduleBase;
     r.matchedBytes = QString::fromStdString(m.matchedBytes);
     r.hitTime = QString::fromStdString(m.hitTime);
+    r.custom = QString::fromStdString(m.custom);
     return r;
 }
 
@@ -60,7 +66,21 @@ psig::MatchResult toPsigResult(const ResultRow& r) {
     m.moduleBase = r.moduleBase;
     m.matchedBytes = r.matchedBytes.toStdString();
     m.hitTime = r.hitTime.toStdString();
+    m.custom = r.custom.toStdString();
     return m;
+}
+
+// 结果导出列定义（键, 标题），顺序与 psig 结果列一致（不含派生的十进制地址列）
+std::vector<std::pair<QString, QString>> resultColumnDefs() {
+    return {{QStringLiteral("pattern_name"), QObject::tr("特征码名")},
+            {QStringLiteral("process_name"), QObject::tr("进程")},
+            {QStringLiteral("pid"), QObject::tr("PID")},
+            {QStringLiteral("address"), QObject::tr("地址")},
+            {QStringLiteral("module_name"), QObject::tr("模块")},
+            {QStringLiteral("module_base"), QObject::tr("模块基址")},
+            {QStringLiteral("matched_bytes"), QObject::tr("匹配字节")},
+            {QStringLiteral("hit_time"), QObject::tr("命中时间")},
+            {QStringLiteral("custom"), QObject::tr("自定义")}};
 }
 
 } // namespace
@@ -93,37 +113,50 @@ void MainViewModel::install(MainWindow* view) {
     bindProcessPage();
     bindResultPage();
     bindGlobalActions();
+    bindContextMenus();
 
     applyInitialColumns();
-    m_view->showSignaturePage();
+    // 启动即为进程页（未选定进程前锁定特征码/结果页）
+    m_view->setProcessSelectionLocked(false);
+    m_view->showProcessPage();
     refreshPersistentStatus();
-    m_view->setTransientMessage(tr("就绪"));
-    m_view->appendLog(tr("[启动] 进程特征码批量匹配器已就绪"));
+    m_view->setTransientMessage(tr("就绪，请选择目标进程"));
+    m_view->appendLog(tr("[启动] 进程特征码批量匹配器 v0.2.0 已就绪"));
 }
 
 void MainViewModel::bindSignaturePage() {
+    // 行操作改由表格右键菜单触发
     auto* page = m_view->signaturePage();
-    connect(page->addRowBtn(), &QPushButton::clicked, this, &MainViewModel::onAddSignatureRow);
-    connect(page->deleteRowBtn(), &QPushButton::clicked, this, &MainViewModel::onDeleteSignatureRows);
-    connect(page->manageColumnsBtn(), &QPushButton::clicked, this, &MainViewModel::onManageColumns);
+    connect(page->addRowAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRow);
+    connect(page->deleteRowsAction(), &QAction::triggered, this, &MainViewModel::onDeleteSignatureRows);
+    connect(page->manageColumnsAction(), &QAction::triggered, this, &MainViewModel::onManageColumns);
 }
 
 void MainViewModel::bindProcessPage() {
     auto* page = m_view->processPage();
-    connect(page->refreshBtn(), &QPushButton::clicked, this, &MainViewModel::onRefreshProcesses);
-    connect(page->selectAllBtn(), &QPushButton::clicked, this, [this]() {
+    connect(page->refreshAction(), &QAction::triggered, this, &MainViewModel::onRefreshProcesses);
+    connect(page->useAsTargetAction(), &QAction::triggered, this, &MainViewModel::onConfirmProcessSelection);
+    connect(page->selectAllAction(), &QAction::triggered, this, [this]() {
         if (m_view->processPage()->table()->model())
             m_view->processPage()->table()->selectAll();
     });
     connect(page->filterEdit(), &QLineEdit::textChanged, this, &MainViewModel::onProcessFilterChanged);
+    // 双击进程行 = 确认选择
+    connect(page->table(), &QTableView::doubleClicked, this, [this](const QModelIndex&) {
+        onConfirmProcessSelection();
+    });
 }
 
 void MainViewModel::bindResultPage() {
     auto* page = m_view->resultPage();
-    connect(page->exportCsvBtn(), &QPushButton::clicked, this, &MainViewModel::onExportResultsCsv);
-    connect(page->exportDbBtn(), &QPushButton::clicked, this, &MainViewModel::onExportResultsDb);
-    connect(page->exportTxtBtn(), &QPushButton::clicked, this, &MainViewModel::onExportResultsTxt);
-    connect(page->clearBtn(), &QPushButton::clicked, this, &MainViewModel::onClearResults);
+    connect(page->exportCsvAction(), &QAction::triggered, this, &MainViewModel::onExportResultsCsv);
+    connect(page->exportDbAction(), &QAction::triggered, this, &MainViewModel::onExportResultsDb);
+    connect(page->exportTxtAction(), &QAction::triggered, this, &MainViewModel::onExportResultsTxt);
+    connect(page->selectColumnsAction(), &QAction::triggered, this, &MainViewModel::onSelectExportColumns);
+    connect(page->deleteRowsAction(), &QAction::triggered, this, &MainViewModel::onDeleteResultRows);
+    connect(page->fillCustomAction(), &QAction::triggered, this, &MainViewModel::onFillCustomColumn);
+    connect(page->clearAction(), &QAction::triggered, this, &MainViewModel::onClearResults);
+    connect(page->templateEdit(), &QPlainTextEdit::textChanged, this, &MainViewModel::onTemplateTextChanged);
 }
 
 void MainViewModel::bindGlobalActions() {
@@ -134,13 +167,42 @@ void MainViewModel::bindGlobalActions() {
     connect(m_view->cancelScanAction(), &QAction::triggered, this, &MainViewModel::onCancelScan);
     connect(m_view->manageColumnsAction(), &QAction::triggered, this, &MainViewModel::onManageColumns);
     connect(m_view->addSignatureRowAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRow);
+    connect(m_view->confirmProcessAction(), &QAction::triggered, this, &MainViewModel::onConfirmProcessSelection);
+    connect(m_view->reselectProcessAction(), &QAction::triggered, this, &MainViewModel::onReselectProcess);
+    connect(m_view->clearResultsAction(), &QAction::triggered, this, &MainViewModel::onClearResults);
     connect(m_view->showSignaturePageAction(), &QAction::triggered, m_view, &MainWindow::showSignaturePage);
     connect(m_view->showProcessPageAction(), &QAction::triggered, m_view, &MainWindow::showProcessPage);
     connect(m_view->showResultPageAction(), &QAction::triggered, m_view, &MainWindow::showResultPage);
-    connect(m_view->aboutAction(), &QAction::triggered, this, [this]() {
-        m_view->setTransientMessage(tr("进程特征码批量匹配器 · 基于 psig 静态库"));
-    });
+    connect(m_view->aboutAction(), &QAction::triggered, this, &MainViewModel::onAbout);
     connect(m_view->clearLogAction(), &QAction::triggered, this, &MainViewModel::onClearLog);
+}
+
+void MainViewModel::bindContextMenus() {
+    connect(m_view->signaturePage()->table(), &QWidget::customContextMenuRequested,
+            this, &MainViewModel::onSignatureContextMenu);
+    connect(m_view->processPage()->table(), &QWidget::customContextMenuRequested,
+            this, &MainViewModel::onProcessContextMenu);
+    connect(m_view->resultPage()->table(), &QWidget::customContextMenuRequested,
+            this, &MainViewModel::onResultContextMenu);
+}
+
+void MainViewModel::onSignatureContextMenu(const QPoint& pos) {
+    auto* t = m_view->signaturePage()->table();
+    m_view->signaturePage()->contextMenu()->exec(t->viewport()->mapToGlobal(pos));
+}
+
+void MainViewModel::onProcessContextMenu(const QPoint& pos) {
+    auto* t = m_view->processPage()->table();
+    m_view->processPage()->contextMenu()->exec(t->viewport()->mapToGlobal(pos));
+}
+
+void MainViewModel::onResultContextMenu(const QPoint& pos) {
+    auto* page = m_view->resultPage();
+    page->exportCsvAction()->setEnabled(m_resultModel->rowCount() > 0);
+    page->exportDbAction()->setEnabled(m_resultModel->rowCount() > 0);
+    page->exportTxtAction()->setEnabled(m_resultModel->rowCount() > 0);
+    auto* t = page->table();
+    page->contextMenu()->exec(t->viewport()->mapToGlobal(pos));
 }
 
 void MainViewModel::applyInitialColumns() {
@@ -152,7 +214,10 @@ void MainViewModel::applyInitialColumns() {
 void MainViewModel::refreshPersistentStatus() {
     const int patterns = m_sigModel ? m_sigModel->rowCount() : 0;
     const int procs = m_procModel ? m_procModel->rowCount() : 0;
-    m_view->setPersistentStatus(tr("就绪 | 进程 %1 | 特征码 %2").arg(procs).arg(patterns));
+    const QString target = m_targetPid ? QStringLiteral("%1(%2)").arg(m_targetName).arg(m_targetPid)
+                                       : QStringLiteral("-");
+    m_view->setPersistentStatus(
+        tr("就绪 | 目标 %1 | 进程 %2 | 特征码 %3").arg(target).arg(procs).arg(patterns));
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +256,23 @@ void MainViewModel::onManageColumns() {
 }
 
 void MainViewModel::onImportSignatures() {
+    // 前置询问：当前特征码表非空时先问是否保存（需决策 → 弹窗）
+    if (m_sigModel->rowCount() > 0) {
+        QMessageBox box(m_view);
+        box.setWindowTitle(tr("导入前确认"));
+        box.setText(tr("当前特征码表可能未保存，是否先保存？"));
+        QPushButton* saveBtn = box.addButton(tr("保存"), QMessageBox::AcceptRole);
+        box.addButton(tr("不保存"), QMessageBox::DestructiveRole);
+        QPushButton* cancelBtn = box.addButton(tr("取消"), QMessageBox::RejectRole);
+        box.exec();
+        if (box.clickedButton() == cancelBtn) return; // 取消路径
+        if (box.clickedButton() == saveBtn) {
+            const QString savePath = QFileDialog::getSaveFileName(
+                m_view, tr("保存特征码"), QString(), tr("CSV (*.csv);;SQLite (*.db)"));
+            if (savePath.isEmpty()) return; // 取消保存 → 中止导入
+            exportSignaturesToPath(savePath);
+        }
+    }
     const QString path = QFileDialog::getOpenFileName(
         m_view, tr("导入特征码"), QString(), tr("特征码表 (*.csv *.db);;CSV (*.csv);;SQLite (*.db)"));
     if (path.isEmpty()) return; // 取消路径
@@ -284,6 +366,30 @@ std::vector<uint32_t> MainViewModel::selectedPids() const {
     return pids;
 }
 
+void MainViewModel::onConfirmProcessSelection() {
+    auto* sel = m_view->processPage()->table()->selectionModel();
+    if (!sel || sel->selectedRows().isEmpty()) {
+        m_view->setTransientMessage(tr("请先选择目标进程"), true); // 错误路径
+        return;
+    }
+    const int row = sel->selectedRows().first().row();
+    const ProcessRow r = m_procModel->processAt(row);
+    m_targetPid = r.pid;
+    m_targetName = r.name;
+    m_view->setProcessSelectionLocked(true);
+    m_view->showSignaturePage();
+    refreshPersistentStatus();
+    m_view->setTransientMessage(tr("已选定目标：%1 (pid %2)").arg(m_targetName).arg(m_targetPid));
+    m_view->appendLog(tr("[导航] 选定目标 %1 (pid %2)").arg(m_targetName).arg(m_targetPid));
+}
+
+void MainViewModel::onReselectProcess() {
+    m_view->setProcessSelectionLocked(false);
+    m_view->showProcessPage();
+    m_view->setTransientMessage(tr("请重新选择目标进程"));
+    m_view->appendLog(tr("[导航] 返回进程页"));
+}
+
 // ---------------------------------------------------------------------------
 // 扫描
 // ---------------------------------------------------------------------------
@@ -353,7 +459,7 @@ void MainViewModel::onScanFinished() {
 }
 
 // ---------------------------------------------------------------------------
-// 结果导出 / 清空 / 日志
+// 结果导出 / 删行 / 填充 / 清空 / 日志
 // ---------------------------------------------------------------------------
 
 void MainViewModel::onExportResultsCsv() {
@@ -396,14 +502,15 @@ void MainViewModel::exportResultsToPath(const QString& path) {
     }
     std::vector<psig::MatchResult> results;
     for (const auto& r : m_resultModel->results()) results.push_back(toPsigResult(r));
+    const psig::ResultExportOptions opt = exportOptions();
     std::string err;
     bool ok = false;
     if (path.endsWith(".db", Qt::CaseInsensitive)) {
-        ok = psig::ExportResultsDb(path.toStdString(), results, err);
+        ok = psig::ExportResultsDb(path.toStdString(), results, err, opt);
     } else if (path.endsWith(".txt", Qt::CaseInsensitive)) {
-        ok = psig::ExportResultsTxt(path.toStdString(), results, err);
+        ok = psig::ExportResultsTxt(path.toStdString(), results, err, opt);
     } else {
-        ok = psig::ExportResultsCsv(path.toStdString(), results, err);
+        ok = psig::ExportResultsCsv(path.toStdString(), results, err, opt);
     }
     if (!ok) {
         m_view->setTransientMessage(tr("导出失败: %1").arg(QString::fromStdString(err)), true);
@@ -411,6 +518,86 @@ void MainViewModel::exportResultsToPath(const QString& path) {
     }
     m_view->setTransientMessage(tr("已导出: %1").arg(path));
     m_view->appendLog(tr("[导出] 结果 → %1").arg(path));
+}
+
+void MainViewModel::onDeleteResultRows() {
+    auto* sel = m_view->resultPage()->table()->selectionModel();
+    if (!sel) return;
+    std::vector<int> rows;
+    for (const auto& idx : sel->selectedRows()) rows.push_back(idx.row());
+    if (rows.empty()) {
+        m_view->setTransientMessage(tr("请先选择要删除的行"), true);
+        return;
+    }
+    m_resultModel->removeRows(rows);
+    m_view->setTransientMessage(tr("已删除 %1 行").arg(rows.size()));
+    m_view->appendLog(tr("[结果] 删除 %1 行").arg(rows.size()));
+}
+
+void MainViewModel::onFillCustomColumn() {
+    auto* sel = m_view->resultPage()->table()->selectionModel();
+    std::vector<int> rows;
+    if (sel) for (const auto& idx : sel->selectedRows()) rows.push_back(idx.row());
+
+    bool fillAll = false;
+    if (rows.empty()) {
+        if (m_resultModel->rowCount() == 0) {
+            m_view->setTransientMessage(tr("无结果可填充"), true);
+            return;
+        }
+        if (QMessageBox::question(m_view, tr("批量填充"),
+                tr("未选择行，是否填充全部 %1 行？").arg(m_resultModel->rowCount())) != QMessageBox::Yes) {
+            m_view->setTransientMessage(tr("请选择要填充的行"), true);
+            return;
+        }
+        fillAll = true;
+    }
+
+    bool ok = false;
+    const QString text = QInputDialog::getMultiLineText(m_view, tr("批量填充自定义列"),
+                                                        tr("自定义列内容："), m_templateText, &ok);
+    if (!ok) return; // 取消路径
+
+    std::vector<int> targets = rows;
+    if (fillAll) {
+        targets.clear();
+        for (int i = 0; i < m_resultModel->rowCount(); ++i) targets.push_back(i);
+    }
+    m_resultModel->setCustom(targets, text);
+    m_view->setTransientMessage(tr("已填充 %1 行自定义列").arg(targets.size()));
+    m_view->appendLog(tr("[结果] 填充自定义列 %1 行").arg(targets.size()));
+}
+
+void MainViewModel::onTemplateTextChanged() {
+    m_templateText = m_view->resultPage()->templateText();
+}
+
+void MainViewModel::onSelectExportColumns() {
+    ExportColumnsDialog dlg(m_view);
+    dlg.setColumns(resultColumnDefs(), m_exportColumns);
+    if (dlg.exec() != QDialog::Accepted) return;
+    const QStringList keys = dlg.selectedKeys();
+    if (keys.isEmpty()) {
+        m_view->setTransientMessage(tr("至少选择一列"), true);
+        return;
+    }
+    m_exportColumns = keys;
+    m_view->setTransientMessage(tr("将导出 %1 列").arg(keys.size()));
+    m_view->appendLog(tr("[结果] 选择导出列 %1 个").arg(keys.size()));
+}
+
+void MainViewModel::onAbout() {
+#ifdef QT_DEBUG
+    const QString cfg = QStringLiteral("Debug");
+#else
+    const QString cfg = QStringLiteral("Release");
+#endif
+    AboutDialog dlg(m_view);
+    dlg.setInfo(tr("进程特征码批量匹配器 v0.2.0\n"
+                   "基于 psig 静态库（进程特征码批量匹配）\n"
+                   "构建配置：%1\nQt 版本：%2")
+                    .arg(cfg, QString::fromLatin1(qVersion())));
+    dlg.exec();
 }
 
 void MainViewModel::onClearResults() {
@@ -428,8 +615,22 @@ void MainViewModel::onClearLog() {
 }
 
 // ---------------------------------------------------------------------------
-// 转换辅助
+// 转换辅助 / 测试注入
 // ---------------------------------------------------------------------------
+
+void MainViewModel::setTemplateText(const QString& text) {
+    m_templateText = text;
+    if (m_view) m_view->resultPage()->setTemplateText(text);
+}
+
+void MainViewModel::setExportColumns(const QStringList& keys) { m_exportColumns = keys; }
+
+psig::ResultExportOptions MainViewModel::exportOptions() const {
+    psig::ResultExportOptions o;
+    o.templateText = m_templateText.toStdString();
+    for (const auto& k : m_exportColumns) o.columns.push_back(k.toStdString());
+    return o;
+}
 
 std::vector<psig::Pattern> MainViewModel::collectPatterns(std::string& err) const {
     err.clear();
@@ -458,6 +659,7 @@ psig::Table MainViewModel::tableFromModel() const {
         for (const auto& cell : r.cells) tr.cells.push_back(cell.toStdString());
         t.rows.push_back(tr);
     }
+    t.templateText = m_templateText.toStdString();
     return t;
 }
 
@@ -472,4 +674,7 @@ void MainViewModel::applyTableToModel(const psig::Table& table) {
         rows.push_back(sr);
     }
     m_sigModel->setRows(rows);
+    // 模板随表携带
+    m_templateText = QString::fromStdString(table.templateText);
+    m_view->resultPage()->setTemplateText(m_templateText);
 }

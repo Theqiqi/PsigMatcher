@@ -38,4 +38,5 @@ struct ResultRow {
     quint64 moduleBase = 0;
     QString matchedBytes;
     QString hitTime;
+    QString custom;      // 自定义列（可编辑，随导出携带）
 };

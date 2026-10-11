@@ -2,31 +2,31 @@
 #include "view/signatureeditorpage.h"
 
 #include <QAbstractItemModel>
-#include <QHBoxLayout>
+#include <QAction>
 #include <QHeaderView>
-#include <QPushButton>
+#include <QMenu>
 #include <QTableView>
 #include <QVBoxLayout>
 
 SignatureEditorPage::SignatureEditorPage(QWidget* parent) : QWidget(parent) {
-    m_addRowBtn = new QPushButton(tr("新增行"), this);
-    m_deleteRowBtn = new QPushButton(tr("删除行"), this);
-    m_manageColumnsBtn = new QPushButton(tr("列管理"), this);
-
-    auto* toolbar = new QHBoxLayout();
-    toolbar->addWidget(m_addRowBtn);
-    toolbar->addWidget(m_deleteRowBtn);
-    toolbar->addWidget(m_manageColumnsBtn);
-    toolbar->addStretch();
+    // 行操作统一收敛到表格右键菜单（不再使用按钮条）
+    m_addRowAction = new QAction(tr("新增行"), this);
+    m_deleteRowsAction = new QAction(tr("删除选中行"), this);
+    m_manageColumnsAction = new QAction(tr("列管理"), this);
+    m_contextMenu = new QMenu(this);
+    m_contextMenu->addAction(m_addRowAction);
+    m_contextMenu->addAction(m_deleteRowsAction);
+    m_contextMenu->addSeparator();
+    m_contextMenu->addAction(m_manageColumnsAction);
 
     m_table = new QTableView(this);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->horizontalHeader()->setStretchLastSection(true);
     m_table->setAlternatingRowColors(true);
+    m_table->setContextMenuPolicy(Qt::CustomContextMenu);
 
     auto* layout = new QVBoxLayout(this);
-    layout->addLayout(toolbar);
     layout->addWidget(m_table);
 }
 

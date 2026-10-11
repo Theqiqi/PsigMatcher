@@ -8,6 +8,7 @@ class QLabel;
 class QProgressBar;
 class QPlainTextEdit;
 class QStackedWidget;
+class QToolBar;
 class SignatureEditorPage;
 class ProcessSelectionPage;
 class ResultPage;
@@ -30,6 +31,9 @@ public:
     QAction* cancelScanAction() const { return m_cancelScanAction; }
     QAction* manageColumnsAction() const { return m_manageColumnsAction; }
     QAction* addSignatureRowAction() const { return m_addRowAction; }
+    QAction* confirmProcessAction() const { return m_confirmProcessAction; }
+    QAction* reselectProcessAction() const { return m_reselectProcessAction; }
+    QAction* clearResultsAction() const { return m_clearResultsAction; }
 
     // 视图导航动作 getter（供 ViewModel connect）
     QAction* showSignaturePageAction() const { return m_showSignatureAction; }
@@ -53,16 +57,20 @@ public:
     void setProgress(int value); // 0..100；负值隐藏
     void appendLog(const QString& text);
     void clearLog();
+    // 进程选定后锁定：隐藏进程页入口/进程动作，显示「重新选择进程」
+    void setProcessSelectionLocked(bool locked);
 
 private:
     void buildMenuAndToolbar();
     void buildCentral();
     void buildStatusAndLog();
+    void applyToolbarForPage(int index); // 0=特征码 1=进程 2=结果
 
     QStackedWidget* m_stack = nullptr;
     SignatureEditorPage* m_signaturePage = nullptr;
     ProcessSelectionPage* m_processPage = nullptr;
     ResultPage* m_resultPage = nullptr;
+    QToolBar* m_toolbar = nullptr;
 
     QAction* m_importAction = nullptr;
     QAction* m_exportAction = nullptr;
@@ -71,6 +79,9 @@ private:
     QAction* m_cancelScanAction = nullptr;
     QAction* m_manageColumnsAction = nullptr;
     QAction* m_addRowAction = nullptr;
+    QAction* m_confirmProcessAction = nullptr;
+    QAction* m_reselectProcessAction = nullptr;
+    QAction* m_clearResultsAction = nullptr;
     QAction* m_showSignatureAction = nullptr;
     QAction* m_showProcessAction = nullptr;
     QAction* m_showResultAction = nullptr;
@@ -81,4 +92,6 @@ private:
     QLabel* m_transientLabel = nullptr;
     QProgressBar* m_progressBar = nullptr;
     QPlainTextEdit* m_logEdit = nullptr;
+
+    bool m_processSelectionLocked = false;
 };

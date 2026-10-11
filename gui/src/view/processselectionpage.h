@@ -1,10 +1,11 @@
-// view/processselectionpage.h - 进程选择页（只画 UI）
+// view/processselectionpage.h - 进程选择页（只画 UI，右键菜单）
 #pragma once
 
 #include <QWidget>
 
 class QTableView;
-class QPushButton;
+class QMenu;
+class QAction;
 class QLineEdit;
 class QAbstractItemModel;
 
@@ -14,15 +15,19 @@ public:
     explicit ProcessSelectionPage(QWidget* parent = nullptr);
 
     QTableView* table() const { return m_table; }
-    QPushButton* refreshBtn() const { return m_refreshBtn; }
-    QPushButton* selectAllBtn() const { return m_selectAllBtn; }
     QLineEdit* filterEdit() const { return m_filterEdit; }
+    QMenu* contextMenu() const { return m_contextMenu; }
+    QAction* useAsTargetAction() const { return m_useAsTargetAction; }
+    QAction* refreshAction() const { return m_refreshAction; }
+    QAction* selectAllAction() const { return m_selectAllAction; }
 
     void setModel(QAbstractItemModel* model);
 
 private:
     QTableView* m_table = nullptr;
-    QPushButton* m_refreshBtn = nullptr;
-    QPushButton* m_selectAllBtn = nullptr;
     QLineEdit* m_filterEdit = nullptr;
+    QMenu* m_contextMenu = nullptr;
+    QAction* m_useAsTargetAction = nullptr;
+    QAction* m_refreshAction = nullptr;
+    QAction* m_selectAllAction = nullptr;
 };
