@@ -1225,7 +1225,7 @@
 前置     : test/integration/测试文件
 解构     : 观察 [执行集成测试]
 产物     : 集成测试结果
-约束     : 涉及真实抓包的用例需管理员令牌（Windows `RunAs` 提权；WSL `sudo`/`setcap`/`wsl -u root`），否则按环境跳过，详见 design/v0.1.0/gui/33_admin_capture_guide.md；全部通过→继续编写用户流程测试；失败→修复后重试
+约束     : 涉及真实抓包的用例需管理员令牌（Windows `RunAs` 提权；WSL `sudo`/`setcap`/`wsl -u root`），否则按环境跳过，详见 design/v<版本>/gui/33_admin_capture_guide.md；全部通过→继续编写用户流程测试；失败→修复后重试
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 集成测试结果 产出且 约束 逐条 满足；哪步不符合就跳回哪步
 
@@ -1247,7 +1247,7 @@
 前置     : test/integration/test_user_flow.cpp
 解构     : 观察 [执行用户流程测试]
 产物     : 用户流程测试结果
-约束     : 涉及真实抓包的用例需管理员令牌（Windows `RunAs` 提权；WSL `sudo`/`setcap`/`wsl -u root`），否则按环境跳过，详见 design/v0.1.0/gui/33_admin_capture_guide.md；全部通过→继续到E2E测试；失败→修复后重试
+约束     : 涉及真实抓包的用例需管理员令牌（Windows `RunAs` 提权；WSL `sudo`/`setcap`/`wsl -u root`），否则按环境跳过，详见 design/v<版本>/gui/33_admin_capture_guide.md；全部通过→继续到E2E测试；失败→修复后重试
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 用户流程测试结果 产出且 约束 逐条 满足；哪步不符合就跳回哪步
 
@@ -1313,7 +1313,7 @@
 前置     : test/e2e/verify_all.sh、test/e2e/cases.md、编译产物
 解构     : 观察 [真实启动程序 / 注入真实操作 / 断言真实画面]
 产物     : E2E测试结果
-约束     : 必须使用真实编译产物，禁止mock或伪造画面；真实抓包类用例（如实时抓包、包进入列表）需要**管理员令牌**：GUI 与驱动脚本均经 `Start-Process -Verb RunAs` 提权（UAC 弹窗点「是」后即可用；UAC「从不通知」时静默提权）；Windows 侧日常启动用 `gui/script/run_gui_admin.bat`（Release）/`run_gui_admin_debug.bat`（Debug），WSL 侧 `sudo` / `setcap cap_net_raw+ep` / `wsl -u root`。无管理员/无外部 IPv4 接口时抓包类用例标记"环境跳过"如实报告（详见 design/v0.1.0/gui/33_admin_capture_guide.md）；按 test/e2e/cases.md 逐条核对用例通过/失败，输出用例级汇总；用例无法执行（入口缺失/画面不符）→ 定位到具体步骤排查；全部用例通过→继续到清理测试环境；失败→根据失败用例定位问题，跳回对应实现步骤修复后重跑
+约束     : 必须使用真实编译产物，禁止mock或伪造画面；真实抓包类用例（如实时抓包、包进入列表）需要**管理员令牌**：GUI 与驱动脚本均经 `Start-Process -Verb RunAs` 提权（UAC 弹窗点「是」后即可用；UAC「从不通知」时静默提权）；Windows 侧日常启动用 `gui/script/run_gui_admin.bat`（Release）/`run_gui_admin_debug.bat`（Debug），WSL 侧 `sudo` / `setcap cap_net_raw+ep` / `wsl -u root`。无管理员/无外部 IPv4 接口时抓包类用例标记"环境跳过"如实报告（详见 design/v<版本>/gui/33_admin_capture_guide.md）；按 test/e2e/cases.md 逐条核对用例通过/失败，输出用例级汇总；用例无法执行（入口缺失/画面不符）→ 定位到具体步骤排查；全部用例通过→继续到清理测试环境；失败→根据失败用例定位问题，跳回对应实现步骤修复后重跑
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : E2E测试结果 产出且 约束 逐条 满足；哪步不符合就跳回哪步
 

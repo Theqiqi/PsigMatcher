@@ -829,7 +829,7 @@
 前置     : 集成测试代码文件
 解构     : 观察 [编译并执行集成测试]
 产物     : 集成测试结果
-约束     : 抓包类集成测试（原始套接字）需要特权：Windows 侧以管理员令牌运行（`RunAs` 提权，UAC 弹窗点「是」后即可用）；Linux/WSL 侧 `sudo` 运行，或 `sudo setcap cap_net_raw+ep <二进制>` 授能力位后普通用户可跑，或 `wsl -u root` 进 root。无特权/无外部 IPv4 接口时抓包用例按环境跳过而非失败（详见 design/v0.1.0/gui/33_admin_capture_guide.md）。
+约束     : 抓包类集成测试（原始套接字）需要特权：Windows 侧以管理员令牌运行（`RunAs` 提权，UAC 弹窗点「是」后即可用）；Linux/WSL 侧 `sudo` 运行，或 `sudo setcap cap_net_raw+ep <二进制>` 授能力位后普通用户可跑，或 `wsl -u root` 进 root。无特权/无外部 IPv4 接口时抓包用例按环境跳过而非失败（详见 design/v<版本>/gui/33_admin_capture_guide.md）。
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 集成测试结果 产出且 约束 逐条 满足；测试不通过则定位原因并跳回对应步骤
 
