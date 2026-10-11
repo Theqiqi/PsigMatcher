@@ -37,14 +37,14 @@ TEST(MvvmFlow, ScanSelfViaUiSignals) {
     auto* sigModel = sigTable->model();
     ASSERT_NE(sigModel, nullptr);
 
-    // 通过按钮新增一行并填写模式
-    w.signaturePage()->addRowBtn()->click();
+    // 通过右键菜单动作新增一行并填写模式
+    w.signaturePage()->addRowAction()->trigger();
     ASSERT_EQ(sigModel->rowCount(), 1);
     sigModel->setData(sigModel->index(0, 0), QStringLiteral("self_marker"));
     sigModel->setData(sigModel->index(0, 1), QStringLiteral("DE AD BE EF 11 22 33 44"));
 
     // 刷新进程（异步）
-    w.processPage()->refreshBtn()->click();
+    w.processPage()->refreshAction()->trigger();
     auto* procModel = w.processPage()->table()->model();
     QTRY_VERIFY_WITH_TIMEOUT(procModel->rowCount() > 0, 10000);
 
@@ -74,7 +74,7 @@ TEST(MvvmFlow, RefreshProcessesUpdatesModel) {
     w.show();
     MainViewModel vm;
     vm.install(&w);
-    w.processPage()->refreshBtn()->click();
+    w.processPage()->refreshAction()->trigger();
     QTRY_VERIFY_WITH_TIMEOUT(w.processPage()->table()->model()->rowCount() > 0, 10000);
     EXPECT_NE(w.persistentLabel()->text().indexOf(QStringLiteral("进程")), -1);
 }
