@@ -1,4 +1,4 @@
-# 22 View 层接口（v0.2.0，增量）
+# 22 View 层接口（v0.2.1，增量）
 
 > 前置：`08_窗口层次结构与导航图.md`、`09_Qt_ModelView绑定.md`、`04_GUI需求分析.md`
 > 说明：View 只依赖 Qt 与 Model 层；**无 signals/private slots、无 connect**；暴露控件 getter、公开 UI 方法、右键菜单 getter。
@@ -10,18 +10,23 @@ class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     // 既有 getter 保留 …
-    // 新增动作 getter
-    QAction* confirmProcessAction() const;    // 确认选择（进入特征码页）
-    QAction* reselectProcessAction() const;   // 重新选择进程
-    QAction* clearResultsAction() const;      // 清空结果（结果页工具栏）
+
+    // 新增：语言菜单动作 getter（供 VM connect）
+    QAction* languageZhAction() const;        // 中文
+    QAction* languageEnAction() const;        // English
+    QAction* languageSystemAction() const;    // 跟随系统
+    QActionGroup* languageGroup() const;      // 互斥组
 
     // 新增公开 UI 方法
-    void setProcessSelectionLocked(bool locked); // 隐藏进程页入口/进程动作，显示「重新选择进程」
-    // showSignaturePage/showProcessPage/showResultPage 内部按页显隐工具栏（applyToolbarForPage）
+    void retranslateUi();                     // 重新设置全部界面文案（切换语言后）
+    void setLanguageChecked(const QString& code); // 勾选当前语言（""=跟随系统）
+    // 既有：showXxxPage / setPersistentStatus / setTransientMessage / setProgress /
+    //       appendLog（内部按级别着色）/ clearLog / setProcessSelectionLocked
 };
 ```
 
-- 工具栏使用 `QStyle::standardIcon(...)` + `setToolButtonStyle(Qt::ToolButtonIconOnly)`；每个动作 `setToolTip`/`setText` 保留文字。
+- `appendLog(text)` 内部按内容前缀着色（信息/成功/错误），使用 `QPlainTextEdit` 的 `appendHtml` 或按段落设置字符格式。
+- 语言菜单位于菜单栏（「视图」与「帮助」之间），三项互斥（`QActionGroup`），当前项 `checkable` 选中。
 
 ## SignatureEditorPage（增量）
 
@@ -30,17 +35,15 @@ class SignatureEditorPage : public QWidget {
     Q_OBJECT
 public:
     QTableView* table() const;
-    QMenu* contextMenu() const;                 // 表格右键菜单
-    QAction* addRowAction() const;              // 新增行
-    QAction* deleteRowsAction() const;          // 删除选中行
-    QAction* manageColumnsAction() const;       // 列管理
+    QMenu* contextMenu() const;
+    QAction* addRowAction() const;            // 新增一行
+    QAction* addRowsAction() const;           // 新增多行…（新增）
+    QAction* deleteRowsAction() const;        // 删除选中行
+    QAction* manageColumnsAction() const;     // 列管理
     void setModel(QAbstractItemModel*);
     void selectRow(int row);
 };
 ```
-
-- **移除** `addRowBtn()/deleteRowBtn()/manageColumnsBtn()` 与页面按钮条。
-- 表格 `setContextMenuPolicy(Qt::CustomContextMenu)`；由 VM 连接 `customContextMenuRequested` 弹出 `contextMenu()`。
 
 ## ProcessSelectionPage（增量）
 
@@ -48,69 +51,36 @@ public:
 class ProcessSelectionPage : public QWidget {
     Q_OBJECT
 public:
-    QTableView* table() const;
-    QLineEdit* filterEdit() const;
+    QTableView* table() const;                // 内部 setSortingEnabled(true)
+    QLineEdit* filterEdit() const;            // 移到底部（布局变更）
     QMenu* contextMenu() const;
-    QAction* useAsTargetAction() const;   // 以此进程为目标（确认）
-    QAction* refreshAction() const;       // 刷新
-    QAction* selectAllAction() const;     // 全选
+    QAction* useAsTargetAction() const;
+    QAction* refreshAction() const;
+    QAction* selectAllAction() const;
     void setModel(QAbstractItemModel*);
 };
 ```
 
-- **移除** `refreshBtn()/selectAllBtn()` 与页面按钮。
-- 双击行：VM 连接 `table()` 的 `doubleClicked`。
+- 布局由上到下：`QTableView` → `QLineEdit`（筛选）。
+- 表格 `horizontalHeader()->setSectionsClickable(true)` + `setSortingEnabled(true)`。
 
 ## ResultPage（增量）
 
-```cpp
-class ResultPage : public QWidget {
-    Q_OBJECT
-public:
-    QTableView* table() const;
-    QPlainTextEdit* templateEdit() const;     // 多行模板文本区
-    QMenu* contextMenu() const;
-    QAction* exportCsvAction() const;
-    QAction* exportDbAction() const;
-    QAction* exportTxtAction() const;         // 上述三项置于 contextMenu 的「导出」子菜单
-    QAction* selectColumnsAction() const;     // 选择导出列…
-    QAction* deleteRowsAction() const;        // 删除选中行
-    QAction* fillCustomAction() const;        // 批量填充自定义列
-    QAction* clearAction() const;             // 清空结果
-    void setModel(QAbstractItemModel*);
-    void setTemplateText(const QString&);     // 回填模板（导入时）
-    QString templateText() const;
-};
-```
+- 接口不变（沿用 v0.2.0）；配色由全局 `style.qss` 控制（白底）。
 
-- **移除** `exportCsvBtn()/exportDbBtn()/exportTxtBtn()/clearBtn()`。
-
-## AboutDialog（新增）
+## 对话框（增量）
 
 ```cpp
-class AboutDialog : public QDialog {
-    Q_OBJECT
-public:
-    explicit AboutDialog(QWidget* parent = nullptr);
-    void setInfo(const QString& text);
-    QString info() const;                      // 供测试读取
-    QDialogButtonBox* buttonBox() const;
-};
-```
+// ColumnManagerDialog（既有 getter，本次用于接线）
+QPushButton* addBtn() const; QPushButton* removeBtn() const;
+QPushButton* upBtn() const;  QPushButton* downBtn() const;
+QTableWidget* table() const; QDialogButtonBox* buttonBox() const;
 
-## ExportColumnsDialog（新增）
+// AboutDialog
+QDialogButtonBox* buttonBox() const;
 
-```cpp
-class ExportColumnsDialog : public QDialog {
-    Q_OBJECT
-public:
-    explicit ExportColumnsDialog(QWidget* parent = nullptr);
-    // cols: (key,title) 有序；selectedKeys: 预勾选
-    void setColumns(const std::vector<std::pair<QString, QString>>& cols, const QStringList& selectedKeys);
-    QStringList selectedKeys() const;
-    QListWidget* list() const;
-    QDialogButtonBox* buttonBox() const;
-};
+// ExportColumnsDialog
+QListWidget* list() const; QDialogButtonBox* buttonBox() const;
 ```
 
 ## 约束满足说明

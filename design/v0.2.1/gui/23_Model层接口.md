@@ -1,67 +1,72 @@
-# 23 Model 层接口（v0.2.0，增量）
+# 23 Model 层接口（v0.2.1，增量）
 
-> 前置：`09_Qt_ModelView绑定.md`
+> 前置：`09_Qt_ModelView绑定.md`、`design/v0.2.0/gui/23_Model层接口.md`（基线）
 
-## ResultTableModel（增量）
+## ProcessTableModel（增量）
 
 ```cpp
-class ResultTableModel : public QAbstractTableModel {
+class ProcessTableModel : public QAbstractTableModel {
     Q_OBJECT
 public:
-    // 既有：rowCount/columnCount/data/headerData/flags/setResults/results/appendResult/clear
     int rowCount(...) const override;
-    int columnCount(...) const override;               // 由 8 → 10
-    QVariant data(...) const override;
+    int columnCount(...) const override;       // 4
+    QVariant data(...) const override;         // DisplayRole；名称列 DecorationRole = 图标
     QVariant headerData(...) const override;
-    Qt::ItemFlags flags(...) const override;           // 第 9 列 ItemIsEditable
+    Qt::ItemFlags flags(...) const override;
 
-    bool setData(const QModelIndex&, const QVariant&, int role = Qt::EditRole) override; // 仅第 9 列
+    void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override; // 新增
 
-    void setResults(const std::vector<ResultRow>&);
-    std::vector<ResultRow> results() const;
-    void appendResult(const ResultRow&);
-    void clear();
-
-    void removeRows(const std::vector<int>& rows);              // 新增
-    void setCustom(const std::vector<int>& rows, const QString& text); // 新增（多选/全选批量填充）
+    void setProcesses(const std::vector<ProcessRow>& list);
+    void setIcon(int row, const QIcon& icon);  // 新增（异步图标回填）
+    std::vector<ProcessRow> processes() const;
+    ProcessRow processAt(int row) const;
 };
 ```
 
-### 列布局（10 列）
+### 列布局（4 列）
 
-| 列 | 标题 | 可编辑 |
+| 列 | 标题 | DecorationRole |
 | --- | --- | --- |
-| 0 | 特征码名 | 否 |
-| 1 | 进程 | 否 |
-| 2 | PID | 否 |
-| 3 | 地址(十进制) | 否（派生：`QString::number(address)`） |
-| 4 | 地址 | 否（`0x` + 大写 hex） |
-| 5 | 模块 | 否 |
-| 6 | 模块基址 | 否 |
-| 7 | 匹配字节 | 否 |
-| 8 | 命中时间 | 否 |
-| 9 | 自定义 | **是** |
+| 0 | PID | 否 |
+| 1 | 名称 | **是**（进程图标） |
+| 2 | 路径 | 否 |
+| 3 | 可访问 | 否 |
+
+- `sort()`：列 0=PID（数值）、1=名称（忽略大小写）、2=路径、3=可访问（bool）；排序后就地重排 `m_rows` 并 `layoutChanged`。
+
+## SignatureTableModel（增量）
+
+```cpp
+class SignatureTableModel : public QAbstractTableModel {
+    Q_OBJECT
+public:
+    // 既有：rowCount/columnCount/data/setData/headerData/flags/setColumns/columns/setRows/rows/removeRows/valueAt
+    void addRow(const QString& processDefault = QString());        // 修改：可选默认值
+    void addRows(int count, const QString& processDefault = QString()); // 新增
+};
+```
+
+- `addRow/addRows`：插入空行；若存在键为 `process` 的列且 `processDefault` 非空，则写入该列。
+- `addRows`：`beginInsertRows(first, last)` 一次性插入 `count` 行。
 
 ## model/types.h（增量）
 
 ```cpp
-struct ResultRow {
-    QString patternName;
+struct ProcessRow {
     quint32 pid = 0;
-    QString processName;
-    quint64 address = 0;
-    QString moduleName;
-    quint64 moduleBase = 0;
-    QString matchedBytes;
-    QString hitTime;
-    QString custom;          // 新增
+    QString name;
+    QString path;
+    bool accessible = false;
+    QIcon icon;              // 新增（显示属性，不参与导入导出）
 };
 ```
 
-## 其它模型
+> 需 `#include <QIcon>`（Model 层仅依赖 Qt）。
 
-- `SignatureTableModel`、`ProcessTableModel`：不变。
+## ResultTableModel
+
+- 不变（沿用 v0.2.0）。
 
 ## 约束满足说明
 
-- Model 纯净：仅依赖 Qt 与 `model/types.h`，不依赖 psig；可编辑性由 `flags/setData` 精确控制（仅末列）。
+- Model 纯净：仅依赖 Qt 与 `model/types.h`，不依赖 psig；图标以 `QIcon` 承载（VM 注入），排序仅作用于展示顺序。
