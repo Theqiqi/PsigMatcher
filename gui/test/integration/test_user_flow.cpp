@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLabel>
+#include <QLineEdit>
 #include <QTableView>
 #include <QtTest/QtTest>
 
@@ -171,9 +172,66 @@ TEST(UserFlow, ReselectProcessReturnsToProcessPage) {
     w.show();
     MainViewModel vm;
     vm.install(&w);
+    // 先等启动自动枚举结束，避免其瞬时反馈覆盖断言（C-09）
+    QTRY_VERIFY_WITH_TIMEOUT(w.processPage()->table()->model()->rowCount() > 0, 10000);
     w.reselectProcessAction()->trigger();
     QTest::qWait(30);
     EXPECT_NE(w.transientLabel()->text().indexOf(QStringLiteral("重新选择")), -1);
+}
+
+// C-09：启动自动枚举进程（无需手动刷新）
+TEST(UserFlow, StartupAutoEnumeratesProcesses) {
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    QTRY_VERIFY_WITH_TIMEOUT(w.processPage()->table()->model()->rowCount() > 0, 10000);
+}
+
+// C-10：筛选保持——刷新后只显示匹配项
+TEST(UserFlow, FilterPersistsAcrossRefresh) {
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    auto* table = w.processPage()->table();
+    auto* model = table->model();
+    QTRY_VERIFY_WITH_TIMEOUT(model->rowCount() > 0, 10000);
+
+    w.processPage()->filterEdit()->setText(QStringLiteral("zzz_nomatch_zzz"));
+    QTest::qWait(10);
+    w.processPage()->refreshAction()->trigger();
+    QTRY_VERIFY_WITH_TIMEOUT(model->rowCount() > 0, 10000);
+    QTest::qWait(50);
+
+    int visible = 0;
+    for (int r = 0; r < model->rowCount(); ++r)
+        if (!table->isRowHidden(r)) ++visible;
+    EXPECT_EQ(visible, 0);
+}
+
+// C-03：导出 CSV 带 UTF-8 BOM（中文表头在 Excel 中不乱码）
+TEST(UserFlow, ExportedCsvHasUtf8Bom) {
+    MainWindow w;
+    MainViewModel vm;
+    vm.install(&w);
+    auto* model = w.signaturePage()->table()->model();
+    w.signaturePage()->addRowAction()->trigger();
+    model->setData(model->index(0, 1), QStringLiteral("AA BB"));
+
+    const QString path = tempPath("psig_uf_bom.csv");
+    QFile::remove(path);
+    vm.exportSignaturesToPath(path);
+
+    QFile f(path);
+    ASSERT_TRUE(f.open(QIODevice::ReadOnly));
+    const QByteArray head = f.read(3);
+    f.close();
+    ASSERT_EQ(head.size(), 3);
+    EXPECT_EQ(static_cast<unsigned char>(head[0]), 0xEFu);
+    EXPECT_EQ(static_cast<unsigned char>(head[1]), 0xBBu);
+    EXPECT_EQ(static_cast<unsigned char>(head[2]), 0xBFu);
+    QFile::remove(path);
 }
 
 // UF-A5/A6：扫描后结果行删除 + 末列自定义编辑 + 三种格式导出

@@ -1,6 +1,9 @@
 // test/unit/test_model.cpp - Model 层单元测试（data/setData）
 #include <gtest/gtest.h>
 
+#include <QIcon>
+#include <QPixmap>
+
 #include "model/processtablemodel.h"
 #include "model/resulttablemodel.h"
 #include "model/signaturetablemodel.h"
@@ -98,3 +101,73 @@ TEST(ResultTableModel, RemoveAndSetCustom) {
     m.removeRows({0, 2});
     EXPECT_EQ(m.rowCount(), 1);
 }
+
+// C-06 / C-08：新增多行 + 进程列默认值
+TEST(SignatureTableModel, AddRowsWithProcessDefault) {
+    SignatureTableModel m;
+    m.setColumns({{"name", "名称", "text", true},
+                  {"pattern", "特征码", "text", true},
+                  {"note", "备注", "text", true},
+                  {"process", "进程", "text", true}});
+    m.addRows(3, QStringLiteral("notepad.exe"));
+    ASSERT_EQ(m.rowCount(), 3);
+    EXPECT_EQ(m.valueAt(0, "process"), QStringLiteral("notepad.exe"));
+    EXPECT_EQ(m.valueAt(2, "process"), QStringLiteral("notepad.exe"));
+    m.addRow(QStringLiteral("calc.exe"));
+    EXPECT_EQ(m.valueAt(3, "process"), QStringLiteral("calc.exe"));
+
+    // 无 process 列时：仅新增空行，不报错
+    SignatureTableModel m2;
+    m2.setColumns({{"name", "名称", "text", true}});
+    m2.addRows(2, QStringLiteral("x"));
+    EXPECT_EQ(m2.rowCount(), 2);
+    EXPECT_EQ(m2.valueAt(0, "name"), QString());
+}
+
+// C-08：进程列存在时 valueAt 返回默认值；内置列标题经 tr() 提供
+TEST(SignatureTableModel, BuiltinHeaderTitles) {
+    SignatureTableModel m;
+    m.setColumns({{"name", "名称", "text", true},
+                  {"pattern", "特征码", "text", true},
+                  {"process", "进程", "text", true},
+                  {"c1", "自定义列", "text", false}});
+    EXPECT_EQ(m.headerData(0, Qt::Horizontal).toString(), QString("名称"));
+    EXPECT_EQ(m.headerData(1, Qt::Horizontal).toString(), QString("特征码"));
+    EXPECT_EQ(m.headerData(2, Qt::Horizontal).toString(), QString("进程"));
+    EXPECT_EQ(m.headerData(3, Qt::Horizontal).toString(), QString("自定义列")); // 自定义列沿用标题
+}
+
+// C-11：进程表按列排序
+TEST(ProcessTableModel, SortByColumns) {
+    ProcessTableModel m;
+    m.setProcesses({{300, "c.exe", "C:\\c", true},
+                    {100, "a.exe", "C:\\a", false},
+                    {200, "b.exe", "C:\\b", true}});
+    m.sort(0, Qt::AscendingOrder);
+    EXPECT_EQ(m.processAt(0).pid, 100u);
+    EXPECT_EQ(m.processAt(2).pid, 300u);
+
+    m.sort(1, Qt::DescendingOrder);
+    EXPECT_EQ(m.processAt(0).name, QString("c.exe"));
+
+    m.sort(3, Qt::AscendingOrder); // 可访问：false 在前
+    EXPECT_FALSE(m.processAt(0).accessible);
+}
+
+// C-12：名称列 DecorationRole 提供图标
+TEST(ProcessTableModel, SetIconDecorationRole) {
+    ProcessTableModel m;
+    m.setProcesses({{1, "a.exe", "C:\\a", true}});
+    // 初始：DecorationRole 承载 null 图标（QVariant 本身有效但图标为空）
+    EXPECT_TRUE(m.data(m.index(0, 1), Qt::DecorationRole).value<QIcon>().isNull());
+
+    QPixmap pm(16, 16);
+    pm.fill(Qt::red);
+    m.setIcon(0, QIcon(pm));
+    const QVariant v = m.data(m.index(0, 1), Qt::DecorationRole);
+    EXPECT_TRUE(v.isValid());
+    EXPECT_FALSE(v.value<QIcon>().isNull());
+    // 非名称列无 DecorationRole
+    EXPECT_FALSE(m.data(m.index(0, 0), Qt::DecorationRole).isValid());
+}
+

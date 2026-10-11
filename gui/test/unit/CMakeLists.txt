@@ -41,6 +41,9 @@ if(PSIG_QT_STATIC)
 endif()
 add_test(NAME psig_test_viewmodel COMMAND psig_test_viewmodel)
 
+# ViewModel 测试需验证语言切换：嵌入翻译资源（/i18n/*.qm）
+gui_embed_i18n(psig_test_viewmodel test_i18n)
+
 # 测试以 offscreen 平台运行：静态 Qt（Release）仅导入 QOffscreenIntegrationPlugin，
 # 不设此环境变量时默认 windows 平台缺失会触发致命错误并阻塞
 set_tests_properties(psig_test_view psig_test_model psig_test_viewmodel

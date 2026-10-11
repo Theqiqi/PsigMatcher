@@ -152,13 +152,15 @@ Write-Host "[drive] hwnd=$hwnd title='$($proc.MainWindowTitle)'"
 Force-Foreground $hwnd
 Start-Sleep -Milliseconds $StabilizeMs
 
-# E2E-01 启动主界面（v0.2.0：启动即进程选择页）
+# E2E-01 启动主界面（v0.2.1：启动即进程选择页；启动自动枚举进行中）
+Force-Foreground $hwnd
+Start-Sleep -Milliseconds 200
 [void](Capture-Client $hwnd (Join-Path $OutDir "shot_01_start.png"))
 
-# E2E-02 刷新进程 (Ctrl+R)，等待异步枚举填充进程表
+# E2E-02 进程表被填充（C-09 启动自动枚举 / Ctrl+R 刷新），等待异步枚举完成
 Force-Foreground $hwnd
 Press-CtrlKey 0x52
-Start-Sleep -Milliseconds 2500
+Start-Sleep -Milliseconds 2800
 [void](Capture-Client $hwnd (Join-Path $OutDir "shot_02_process_refreshed.png"))
 
 # E2E-03 切换到特征码编辑页 (Ctrl+1)

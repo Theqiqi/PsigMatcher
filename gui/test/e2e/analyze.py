@@ -93,7 +93,7 @@ def main():
         "about": load(verify_dir, "shot_06_about.png"),
     }
 
-    # E2E-01 启动主界面（v0.2.0：启动即进程页）
+    # E2E-01 启动主界面（v0.2.1：启动即进程页；启动自动枚举进行中）
     s = shots["start"]
     if s is None:
         rep.check("E2E-01 启动主界面", False, "缺少 shot_01_start.png")
@@ -105,12 +105,14 @@ def main():
                   (luma > 30) and (ratio > 0.02) and big,
                   f"size={s.width}x{s.height} luma={luma:.1f} ui_ratio={ratio:.3f}")
 
-    # E2E-02 刷新进程（进程表被填充，画面变化）
+    # E2E-02 进程表被填充（C-09 自动枚举 / Ctrl+R）：或与启动画面有差异，或进程页内容明显增多
     if shots["process_refreshed"] and shots["start"]:
         d = diff_ratio(shots["process_refreshed"], shots["start"])
-        rep.check("E2E-02 刷新进程填充列表", d > 0.005, f"diff={d:.5f}")
+        r2 = ui_ratio(shots["process_refreshed"])
+        rep.check("E2E-02 进程表被填充", (d > 0.005) or (r2 > 0.06),
+                  f"diff={d:.5f} ui_ratio={r2:.3f}")
     else:
-        rep.check("E2E-02 刷新进程填充列表", False, "缺少截图")
+        rep.check("E2E-02 进程表被填充", False, "缺少截图")
 
     # E2E-03 页面导航（不同页面画面不同；启动页=进程页）
     if shots["signature"] and shots["start"]:

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <QApplication>
+#include <QLocale>
 #include <gtest/gtest.h>
 
 // 刻意泄漏 QApplication：静态 Qt 下若在退出时析构会与静态插件/线程池析构顺序冲突
@@ -12,6 +13,8 @@ public:
         static char arg0[] = "psig_gui_test";
         static char* argv[] = {arg0, nullptr};
         m_app = new QApplication(argc, argv); // 不 delete（刻意泄漏）
+        // 固定默认语言为中文，使断言与运行机器的系统语言无关（install 默认语言经 QLocale() 判定）
+        QLocale::setDefault(QLocale(QStringLiteral("zh_CN")));
     }
     void TearDown() override {}
 private:
