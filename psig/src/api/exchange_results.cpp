@@ -7,6 +7,7 @@
 #include "algorithm/result_columns.h"
 #include "atomic/file_io.h"
 #include "atomic/sqlite_io.h"
+#include "atomic/win_encoding.h"
 #include "data/codec.h"
 
 namespace psig {
@@ -16,7 +17,7 @@ namespace {
 // 单个结果列键 -> 显示值
 std::string ResultValueForKey(const MatchResult& m, const std::string& key) {
     if (key == "pattern_name") return m.patternName;
-    if (key == "process_name") return data::WideToUtf8(m.processName);
+    if (key == "process_name") return atomic::WideToUtf8(m.processName);
     if (key == "pid") return std::to_string(m.pid);
     if (key == "address") {
         std::ostringstream o;
@@ -24,7 +25,7 @@ std::string ResultValueForKey(const MatchResult& m, const std::string& key) {
         return o.str();
     }
     if (key == "address_dec") return std::to_string(m.address);
-    if (key == "module_name") return data::WideToUtf8(m.moduleName);
+    if (key == "module_name") return atomic::WideToUtf8(m.moduleName);
     if (key == "module_base") {
         std::ostringstream o;
         o << "0x" << std::hex << std::uppercase << m.moduleBase;

@@ -3,7 +3,6 @@
 
 #include <cstdio>
 #include <ctime>
-#include <windows.h>
 
 namespace psig::data {
 
@@ -55,26 +54,6 @@ std::string NowIso8601() {
                   tmv.tm_year + 1900, tmv.tm_mon + 1, tmv.tm_mday,
                   tmv.tm_hour, tmv.tm_min, tmv.tm_sec);
     return buf;
-}
-
-std::string WideToUtf8(const std::wstring& w) {
-    if (w.empty()) return {};
-    int n = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()),
-                                nullptr, 0, nullptr, nullptr);
-    if (n <= 0) return {};
-    std::string s(static_cast<size_t>(n), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()),
-                        s.data(), n, nullptr, nullptr);
-    return s;
-}
-
-std::wstring Utf8ToWide(const std::string& s) {
-    if (s.empty()) return {};
-    int n = MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), nullptr, 0);
-    if (n <= 0) return {};
-    std::wstring w(static_cast<size_t>(n), L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), w.data(), n);
-    return w;
 }
 
 std::string EncodeCells(const std::vector<std::string>& cells) {

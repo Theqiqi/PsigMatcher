@@ -16,10 +16,6 @@ bool HexDecode(const std::string& text, std::vector<uint8_t>& out);
 // 当前时间 ISO8601（本地时间，形如 2026-10-11T12:34:56）
 std::string NowIso8601();
 
-// 宽窄字符串转换（UTF-8 <-> UTF-16）
-std::string WideToUtf8(const std::wstring& w);
-std::wstring Utf8ToWide(const std::string& s);
-
 // 动态列表格的 cells 编解码（长度前缀，形如 5:hello3:abc）
 std::string EncodeCells(const std::vector<std::string>& cells);
 bool DecodeCells(const std::string& text, std::vector<std::string>& cells);

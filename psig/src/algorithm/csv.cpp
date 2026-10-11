@@ -12,27 +12,16 @@ std::vector<std::string> SplitLine(const std::string& line) {
     bool inQuotes = false;
     for (size_t i = 0; i < line.size(); ++i) {
         char c = line[i];
-        if (inQuotes) {
-            if (c == '"') {
-                if (i + 1 < line.size() && line[i + 1] == '"') {
-                    cur.push_back('"');
-                    ++i;
-                } else {
-                    inQuotes = false;
-                }
-            } else {
-                cur.push_back(c);
-            }
-        } else {
-            if (c == '"') {
-                inQuotes = true;
-            } else if (c == ',') {
-                fields.push_back(cur);
-                cur.clear();
-            } else {
-                cur.push_back(c);
-            }
+        if (!inQuotes) {
+            if (c == '"') { inQuotes = true; continue; }
+            if (c == ',') { fields.push_back(cur); cur.clear(); continue; }
+            cur.push_back(c);
+            continue;
         }
+        // 引号内：非引号直接收录；成对 "" 转义为一个引号
+        if (c != '"') { cur.push_back(c); continue; }
+        if (i + 1 < line.size() && line[i + 1] == '"') { cur.push_back('"'); ++i; continue; }
+        inQuotes = false;
     }
     fields.push_back(cur);
     return fields;

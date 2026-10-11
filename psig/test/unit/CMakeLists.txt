@@ -5,6 +5,7 @@ add_executable(psig_unit
     test_pattern.cpp
     test_csv.cpp
     test_codec.cpp
+    test_win_encoding.cpp
     test_result_columns.cpp
 )
 

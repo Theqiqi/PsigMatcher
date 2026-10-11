@@ -31,11 +31,6 @@ TEST(HexCodec, RoundTrip) {
     EXPECT_EQ(b, out);
 }
 
-TEST(WideUtf8, RoundTrip) {
-    std::wstring w = L"进程特征码";
-    EXPECT_EQ(Utf8ToWide(WideToUtf8(w)), w);
-}
-
 TEST(NowIso8601, Format) {
     std::string s = NowIso8601();
     EXPECT_EQ(s.size(), 19u);

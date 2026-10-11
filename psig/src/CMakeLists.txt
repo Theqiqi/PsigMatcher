@@ -13,6 +13,7 @@ add_library(psig STATIC
     algorithm/result_columns.cpp
     atomic/win_process.cpp
     atomic/win_icon.cpp
+    atomic/win_encoding.cpp
     atomic/file_io.cpp
     atomic/sqlite_io.cpp
     api/process_scan.cpp
