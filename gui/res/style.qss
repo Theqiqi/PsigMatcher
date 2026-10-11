@@ -1,0 +1,40 @@
+/* style.qss - psig_gui 样式表 */
+QMainWindow {
+    background: #f5f6f8;
+}
+QTableView {
+    background: #ffffff;
+    alternate-background-color: #f0f3f7;
+    gridline-color: #d0d7de;
+    selection-background-color: #3a6ea5;
+    selection-color: #ffffff;
+}
+QHeaderView::section {
+    background: #e3e8ee;
+    padding: 4px 6px;
+    border: none;
+    border-right: 1px solid #d0d7de;
+    border-bottom: 1px solid #d0d7de;
+}
+QToolBar {
+    background: #e9edf2;
+    spacing: 4px;
+    padding: 2px;
+}
+QPushButton {
+    padding: 4px 10px;
+    border: 1px solid #b7c0cc;
+    border-radius: 4px;
+    background: #fbfcfe;
+}
+QPushButton:hover {
+    background: #eaf1fb;
+}
+QStatusBar {
+    background: #e9edf2;
+}
+QPlainTextEdit {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: Consolas, monospace;
+}
