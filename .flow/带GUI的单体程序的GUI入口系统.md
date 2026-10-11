@@ -488,7 +488,7 @@
 前置     : GUI职责和边界说明文档、View层接口文档
 解构     : 观察 [审 view/ 下 .h/.cpp 的公共质量项 / View 纯净与独立编译 / 页面拆分 / getter 暴露]
 产物     : design/v<版本>/gui/29_View层审查矩阵.md
-约束     : 本步只审 view/ 目录的 .h/.cpp（含 mainwindow 与各页面类），公共项按文件归属只在本层检查一次。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（函数体计第 1 层，else-if 链不额外计层，lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注豁免理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=View 不得 include viewmodel/* 与静态库头文件、不得引用 ViewModel 类型。View 特有：只负责创建控件/布局/样式，不含事件处理逻辑；不声明 signals、不含 private slots（按钮点击等由 ViewModel 直接 connect 控件信号处理）；View 不知道 ViewModel 存在（无类型引用、无 include）；view 头文件只依赖 Qt 与 model/，每个头文件可单独编译（做 include 自洽性检查）；页面拆分为独立 QWidget 子类独立 .h/.cpp，mainwindow.cpp 只做窗口骨架、不得内联页面控件；每个需绑定控件提供公开 getter、每个界面更新提供公开 UI 方法，供 ViewModel 绑定
+约束     : 本步只审 view/ 目录的 .h/.cpp（含 mainwindow 与各页面类），公共项按文件归属只在本层检查一次。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层；else-if 链不额外计层；lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注豁免理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=View 不得 include viewmodel/* 与静态库头文件、不得引用 ViewModel 类型。View 特有：只负责创建控件/布局/样式，不含事件处理逻辑；不声明 signals、不含 private slots（按钮点击等由 ViewModel 直接 connect 控件信号处理）；View 不知道 ViewModel 存在（无类型引用、无 include）；view 头文件只依赖 Qt 与 model/，每个头文件可单独编译（做 include 自洽性检查）；页面拆分为独立 QWidget 子类独立 .h/.cpp，mainwindow.cpp 只做窗口骨架、不得内联页面控件；每个需绑定控件提供公开 getter、每个界面更新提供公开 UI 方法，供 ViewModel 绑定
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 29_View层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 View 层并重审
 
@@ -499,7 +499,7 @@
 前置     : GUI职责和边界说明文档、Model层接口文档
 解构     : 观察 [审 model/ 下 .h/.cpp 的公共质量项 / Model 纯净无业务逻辑]
 产物     : design/v<版本>/gui/30_Model层审查矩阵.md
-约束     : 本步只审 model/ 目录的 .h/.cpp，公共项按文件归属只在本层检查一次。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（函数体计第 1 层，else-if 链不额外计层，lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注豁免理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=Model 不得 include view/ 或 viewmodel/ 头文件。Model 特有：只管理数据，不含业务逻辑、不含跨层编排；data()/setData()/rowCount()/columnCount()/headerData()/flags() 等 Model/View 契约正确（只读表 flags 不含 ItemIsEditable）；不 include 静态库头文件、不直接调用静态库 API（调用属 ViewModel 职责）
+约束     : 本步只审 model/ 目录的 .h/.cpp，公共项按文件归属只在本层检查一次。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层；else-if 链不额外计层；lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注豁免理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=Model 不得 include view/ 或 viewmodel/ 头文件。Model 特有：只管理数据，不含业务逻辑、不含跨层编排；data()/setData()/rowCount()/columnCount()/headerData()/flags() 等 Model/View 契约正确（只读表 flags 不含 ItemIsEditable）；不 include 静态库头文件、不直接调用静态库 API（调用属 ViewModel 职责）
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 30_Model层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 Model 层并重审
 
@@ -510,7 +510,7 @@
 前置     : GUI职责和边界说明文档、ViewModel接口文档
 解构     : 观察 [审 viewmodel/ 下 .h/.cpp 的公共质量项 / 指针操控与 connect 归属 / 异步与生命周期 / 跨线程异常与内存]
 产物     : design/v<版本>/gui/31_ViewModel层审查矩阵.md
-约束     : 本步只审 viewmodel/ 目录的 .h/.cpp，公共项按文件归属只在本层检查一次。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（函数体计第 1 层，else-if 链不额外计层，lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注豁免理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=VM 不得 include view/*.cpp 内部实现、不得访问 View 私有成员。ViewModel 特有：持 View*/Model*（m_view 初值 nullptr，经 install() 注入），经 View 公开 getter 读控件、公开方法更新 UI，不得 findChild 访问交互控件；全部控件信号集中在 install()/bind* 中 connect，View 侧零连接；耗时操作经 QtConcurrent::run、主线程无 QThread::wait()；后台异常经信号/队列回主线程；QObject 生命周期正确（VM 不先于 View 销毁）；指针参数做 nullptr 保护；QObject parent-child 设置正确、无内存泄漏
+约束     : 本步只审 viewmodel/ 目录的 .h/.cpp，公共项按文件归属只在本层检查一次。公共量化标准（逐项给出计数与证据，禁止只写 ✅）：嵌套 ≤3 层（指控制流块 if/for/while/switch 的嵌套层数，函数体本身不计层；else-if 链不额外计层；lambda 体独立计层）；任一函数体 ≤80 行（自起始 { 的下一物理行至对应 }，含空行与注释）；单文件 ≤400 行（纯类型/常量/语言表文件可豁免，须在矩阵标注豁免理由）；单一职责=一个函数只做一件事；错误或非法状态后必须提前 return；头文件越界=VM 不得 include view/*.cpp 内部实现、不得访问 View 私有成员。ViewModel 特有：持 View*/Model*（m_view 初值 nullptr，经 install() 注入），经 View 公开 getter 读控件、公开方法更新 UI，不得 findChild 访问交互控件；全部控件信号集中在 install()/bind* 中 connect，View 侧零连接；耗时操作经 QtConcurrent::run、主线程无 QThread::wait()；后台异常经信号/队列回主线程；QObject 生命周期正确（VM 不先于 View 销毁）；指针参数做 nullptr 保护；QObject parent-child 设置正确、无内存泄漏
 排除项   : 不超出本步 目标 范围；不做 后续 步骤 的工作
 完成标准 : 31_ViewModel层审查矩阵 产出且 约束 逐条 满足；矩阵每行附证据（文件:行号/计数/grep 命中）；任一 ❌ → 跳回实现 ViewModel 层并重审
 
