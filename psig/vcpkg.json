@@ -1,0 +1,9 @@
+{
+  "name": "psig",
+  "version": "1.0.0",
+  "dependencies": [
+    "sqlite3",
+    "gtest"
+  ],
+  "builtin-baseline": "e456309491fd875487bf02b8a0dca76c1b1b00cc"
+}
