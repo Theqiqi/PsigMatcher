@@ -27,9 +27,18 @@ using System.Runtime.InteropServices;
 public class E2ENative {
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern IntPtr SetActiveWindow(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern IntPtr SetFocus(IntPtr hWnd);
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, IntPtr lpdwProcessId);
+    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
     [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr hWnd, out RECT lpRect);
     [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+    [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
+    [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
     [DllImport("user32.dll")] public static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
@@ -39,8 +48,43 @@ public class E2ENative {
 
 $VK_CONTROL = 0x11
 $VK_SHIFT   = 0x10
+$VK_ESCAPE  = 0x1B
+$VK_F1      = 0x70
 $KEYEVENTF_KEYUP = 0x0002
+$MOUSEEVENTF_LEFTDOWN = 0x0002
+$MOUSEEVENTF_LEFTUP   = 0x0004
 $WM_CLOSE = 0x0010
+
+# 强制目标窗口成为前台并获得键盘焦点：附加到当前前台线程后调用
+# BringWindowToTop/SetForegroundWindow/SetActiveWindow，可绕过 Windows 前台锁定，
+# 否则 keybd_event 注入的按键会落到其它窗口，目标收不到。
+function Force-Foreground([IntPtr]$hwnd) {
+    $fg = [E2ENative]::GetForegroundWindow()
+    $fgThread = [E2ENative]::GetWindowThreadProcessId($fg, [IntPtr]::Zero)
+    $curThread = [E2ENative]::GetCurrentThreadId()
+    if ($fgThread -ne 0 -and $fgThread -ne $curThread) {
+        [void][E2ENative]::AttachThreadInput($curThread, $fgThread, $true)
+    }
+    [void][E2ENative]::ShowWindow($hwnd, 5)          # SW_SHOW
+    [void][E2ENative]::BringWindowToTop($hwnd)
+    [void][E2ENative]::SetForegroundWindow($hwnd)
+    [void][E2ENative]::SetActiveWindow($hwnd)
+    [void][E2ENative]::SetFocus($hwnd)
+    if ($fgThread -ne 0 -and $fgThread -ne $curThread) {
+        [void][E2ENative]::AttachThreadInput($curThread, $fgThread, $false)
+    }
+    # 点击客户区中心，进一步确保键盘焦点落到本窗口
+    $rc = New-Object E2ENative+RECT
+    [void][E2ENative]::GetClientRect($hwnd, [ref]$rc)
+    $pt = New-Object E2ENative+POINT
+    $pt.X = [int](($rc.Right - $rc.Left) / 2)
+    $pt.Y = [int](($rc.Bottom - $rc.Top) / 2)
+    [void][E2ENative]::ClientToScreen($hwnd, [ref]$pt)
+    [void][E2ENative]::SetCursorPos($pt.X, $pt.Y)
+    [E2ENative]::mouse_event($MOUSEEVENTF_LEFTDOWN, 0, 0, 0, [UIntPtr]::Zero)
+    [E2ENative]::mouse_event($MOUSEEVENTF_LEFTUP, 0, 0, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 60
+}
 
 function Press-CtrlKey([byte]$vk) {
     [E2ENative]::keybd_event($VK_CONTROL, 0, 0, [UIntPtr]::Zero)
@@ -49,6 +93,12 @@ function Press-CtrlKey([byte]$vk) {
     [E2ENative]::keybd_event($vk, 0, $KEYEVENTF_KEYUP, [UIntPtr]::Zero)
     Start-Sleep -Milliseconds 40
     [E2ENative]::keybd_event($VK_CONTROL, 0, $KEYEVENTF_KEYUP, [UIntPtr]::Zero)
+}
+
+function Press-Key([byte]$vk) {
+    [E2ENative]::keybd_event($vk, 0, 0, [UIntPtr]::Zero)
+    Start-Sleep -Milliseconds 30
+    [E2ENative]::keybd_event($vk, 0, $KEYEVENTF_KEYUP, [UIntPtr]::Zero)
 }
 
 function Capture-Client([IntPtr]$hwnd, [string]$path) {
@@ -99,39 +149,46 @@ for ($i = 0; $i -lt 50; $i++) {
 if ($hwnd -eq [IntPtr]::Zero) { Write-Host "[drive] no main window"; Stop-Process -Id $proc.Id -Force; exit 1 }
 Write-Host "[drive] hwnd=$hwnd title='$($proc.MainWindowTitle)'"
 
-[void][E2ENative]::ShowWindow($hwnd, 5)   # SW_SHOW
-[void][E2ENative]::SetForegroundWindow($hwnd)
+Force-Foreground $hwnd
 Start-Sleep -Milliseconds $StabilizeMs
 
-# E2E-01 启动主界面
+# E2E-01 启动主界面（v0.2.0：启动即进程选择页）
 [void](Capture-Client $hwnd (Join-Path $OutDir "shot_01_start.png"))
 
-# E2E-02 切换到进程选择页 (Ctrl+2)
-Press-CtrlKey 0x32
-Start-Sleep -Milliseconds $StabilizeMs
-[void](Capture-Client $hwnd (Join-Path $OutDir "shot_02_process.png"))
-
-# E2E-04 刷新进程 (Ctrl+R)，等待异步枚举
+# E2E-02 刷新进程 (Ctrl+R)，等待异步枚举填充进程表
+Force-Foreground $hwnd
 Press-CtrlKey 0x52
 Start-Sleep -Milliseconds 2500
-[void](Capture-Client $hwnd (Join-Path $OutDir "shot_03_process_refreshed.png"))
+[void](Capture-Client $hwnd (Join-Path $OutDir "shot_02_process_refreshed.png"))
 
-# E2E-02 切回特征码编辑页 (Ctrl+1)
+# E2E-03 切换到特征码编辑页 (Ctrl+1)
+Force-Foreground $hwnd
 Press-CtrlKey 0x31
 Start-Sleep -Milliseconds $StabilizeMs
-[void](Capture-Client $hwnd (Join-Path $OutDir "shot_04_signature.png"))
+[void](Capture-Client $hwnd (Join-Path $OutDir "shot_03_signature.png"))
 
-# E2E-03 新增特征码行 (Ctrl+N)
+# E2E-04 新增特征码行 (Ctrl+N)
+Force-Foreground $hwnd
 Press-CtrlKey 0x4E
 Start-Sleep -Milliseconds $StabilizeMs
-[void](Capture-Client $hwnd (Join-Path $OutDir "shot_05_addrow.png"))
+[void](Capture-Client $hwnd (Join-Path $OutDir "shot_04_addrow.png"))
 
-# E2E-02 切换到匹配结果页 (Ctrl+3)
+# E2E-03 切换到匹配结果页 (Ctrl+3)
+Force-Foreground $hwnd
 Press-CtrlKey 0x33
 Start-Sleep -Milliseconds $StabilizeMs
-[void](Capture-Client $hwnd (Join-Path $OutDir "shot_06_result.png"))
+[void](Capture-Client $hwnd (Join-Path $OutDir "shot_05_result.png"))
 
-# E2E-06 关闭程序 (WM_CLOSE)
+# E2E-06 关于弹窗 (F1) —— 模态 AboutDialog 覆盖主窗口
+Force-Foreground $hwnd
+Press-Key $VK_F1
+Start-Sleep -Milliseconds $StabilizeMs
+[void](Capture-Client $hwnd (Join-Path $OutDir "shot_06_about.png"))
+# 关闭关于弹窗 (Esc)：模态对话框已持有焦点，直接注入
+Press-Key $VK_ESCAPE
+Start-Sleep -Milliseconds $StabilizeMs
+
+# E2E-07 关闭程序 (WM_CLOSE)
 Write-Host "[drive] sending WM_CLOSE"
 [void][E2ENative]::PostMessage($hwnd, $WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
 $exited = $proc.WaitForExit(8000)

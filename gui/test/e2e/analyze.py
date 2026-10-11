@@ -86,14 +86,14 @@ def main():
 
     shots = {
         "start": load(verify_dir, "shot_01_start.png"),
-        "process": load(verify_dir, "shot_02_process.png"),
-        "process_refreshed": load(verify_dir, "shot_03_process_refreshed.png"),
-        "signature": load(verify_dir, "shot_04_signature.png"),
-        "addrow": load(verify_dir, "shot_05_addrow.png"),
-        "result": load(verify_dir, "shot_06_result.png"),
+        "process_refreshed": load(verify_dir, "shot_02_process_refreshed.png"),
+        "signature": load(verify_dir, "shot_03_signature.png"),
+        "addrow": load(verify_dir, "shot_04_addrow.png"),
+        "result": load(verify_dir, "shot_05_result.png"),
+        "about": load(verify_dir, "shot_06_about.png"),
     }
 
-    # E2E-01 启动主界面
+    # E2E-01 启动主界面（v0.2.0：启动即进程页）
     s = shots["start"]
     if s is None:
         rep.check("E2E-01 启动主界面", False, "缺少 shot_01_start.png")
@@ -105,39 +105,46 @@ def main():
                   (luma > 30) and (ratio > 0.02) and big,
                   f"size={s.width}x{s.height} luma={luma:.1f} ui_ratio={ratio:.3f}")
 
-    # E2E-02 页面导航（不同页面画面不同）
-    if shots["process"] and shots["signature"]:
-        d = diff_ratio(shots["process"], shots["signature"])
-        rep.check("E2E-02a 进程页≠特征码页", d > 0.004, f"diff={d:.4f}")
+    # E2E-02 刷新进程（进程表被填充，画面变化）
+    if shots["process_refreshed"] and shots["start"]:
+        d = diff_ratio(shots["process_refreshed"], shots["start"])
+        rep.check("E2E-02 刷新进程填充列表", d > 0.005, f"diff={d:.5f}")
     else:
-        rep.check("E2E-02a 进程页≠特征码页", False, "缺少页面截图")
+        rep.check("E2E-02 刷新进程填充列表", False, "缺少截图")
+
+    # E2E-03 页面导航（不同页面画面不同；启动页=进程页）
+    if shots["signature"] and shots["start"]:
+        d = diff_ratio(shots["signature"], shots["start"])
+        rep.check("E2E-03a 特征码页≠进程页", d > 0.004, f"diff={d:.4f}")
+    else:
+        rep.check("E2E-03a 特征码页≠进程页", False, "缺少页面截图")
     if shots["result"] and shots["signature"]:
         d = diff_ratio(shots["result"], shots["signature"])
-        rep.check("E2E-02b 结果页≠特征码页", d > 0.004, f"diff={d:.4f}")
+        rep.check("E2E-03b 结果页≠特征码页", d > 0.004, f"diff={d:.4f}")
     else:
-        rep.check("E2E-02b 结果页≠特征码页", False, "缺少页面截图")
+        rep.check("E2E-03b 结果页≠特征码页", False, "缺少页面截图")
 
-    # E2E-03 新增特征码行（特征码页内容变化）
+    # E2E-04 新增特征码行（特征码页内容变化）
     if shots["addrow"] and shots["signature"]:
         d = diff_ratio(shots["addrow"], shots["signature"])
-        rep.check("E2E-03 新增行改变特征码页", d > 0.001, f"diff={d:.5f}")
+        rep.check("E2E-04 新增行改变特征码页", d > 0.001, f"diff={d:.5f}")
     else:
-        rep.check("E2E-03 新增行改变特征码页", False, "缺少截图")
+        rep.check("E2E-04 新增行改变特征码页", False, "缺少截图")
 
-    # E2E-04 刷新进程（进程表被填充，画面变化）
-    if shots["process_refreshed"] and shots["process"]:
-        d = diff_ratio(shots["process_refreshed"], shots["process"])
-        rep.check("E2E-04 刷新进程填充列表", d > 0.005, f"diff={d:.5f}")
+    # E2E-06 关于弹窗（模态弹窗覆盖主窗口，画面变化）
+    if shots["about"] and shots["result"]:
+        d = diff_ratio(shots["about"], shots["result"])
+        rep.check("E2E-06 关于弹窗覆盖主窗口", d > 0.004, f"diff={d:.5f}")
     else:
-        rep.check("E2E-04 刷新进程填充列表", False, "缺少截图")
+        rep.check("E2E-06 关于弹窗覆盖主窗口", False, "缺少截图")
 
-    # E2E-06 关闭程序退出码为 0
+    # E2E-07 关闭程序退出码为 0
     code_path = os.path.join(verify_dir, "exit_code.txt")
     if os.path.exists(code_path):
         code = open(code_path).read().strip()
-        rep.check("E2E-06 正常关闭退出码0", code == "0", f"exit_code={code}")
+        rep.check("E2E-07 正常关闭退出码0", code == "0", f"exit_code={code}")
     else:
-        rep.check("E2E-06 正常关闭退出码0", False, "缺少 exit_code.txt")
+        rep.check("E2E-07 正常关闭退出码0", False, "缺少 exit_code.txt")
 
     print(f"\n[analyze] 汇总: {rep.passed} passed, {rep.failed} failed")
     return 0 if rep.failed == 0 else 1
