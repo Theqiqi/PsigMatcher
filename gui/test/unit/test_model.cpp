@@ -51,6 +51,18 @@ TEST(ProcessTableModel, SetAndQuery) {
     EXPECT_EQ(m.processAt(1).name, QString("b.exe"));
 }
 
+// C-03：空名进程（PID 0/4 等）显示兜底名，而非空白
+TEST(ProcessTableModel, EmptyNameFallback) {
+    ProcessTableModel m;
+    m.setProcesses({{0, "", "", true}, {4, "", "", true}, {999, "", "", false}});
+    EXPECT_EQ(m.data(m.index(0, 1)).toString(), QString("系统空闲进程"));
+    EXPECT_EQ(m.data(m.index(1, 1)).toString(), QString("系统"));
+    EXPECT_EQ(m.data(m.index(2, 1)).toString(), QString("未知进程"));
+    // 有名进程不受影响
+    m.setProcesses({{1234, QStringLiteral("a.exe"), QStringLiteral("C:\\a.exe"), true}});
+    EXPECT_EQ(m.data(m.index(0, 1)).toString(), QString("a.exe"));
+}
+
 TEST(ProcessTableModel, ReadOnlyFlags) {
     ProcessTableModel m;
     m.setProcesses({{1, "x", "", true}});
@@ -89,6 +101,14 @@ TEST(ResultTableModel, CustomColumnEditable) {
     EXPECT_EQ(m.data(m.index(0, col)).toString(), QStringLiteral("备注"));
     // 非自定义列不可编辑
     EXPECT_FALSE(m.setData(m.index(0, 0), QStringLiteral("x"), Qt::EditRole));
+}
+
+// C-01：末列由「自定义」更名为「备注」
+TEST(ResultTableModel, CustomColumnHeaderRenamed) {
+    ResultTableModel m;
+    m.setResults({ResultRow{}});
+    EXPECT_EQ(m.headerData(ResultTableModel::customColumn(), Qt::Horizontal).toString(),
+              QString("备注"));
 }
 
 TEST(ResultTableModel, RemoveAndSetCustom) {

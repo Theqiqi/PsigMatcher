@@ -2,6 +2,7 @@
 #include "view/columnmanagerdialog.h"
 
 #include <QDialogButtonBox>
+#include <QComboBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QPushButton>
@@ -44,14 +45,33 @@ ColumnManagerDialog::ColumnManagerDialog(QWidget* parent) : QDialog(parent) {
     layout->addWidget(m_buttonBox);
 }
 
+// 构建一行：第 0 列=标题（可编辑文本），第 1 列=键（下拉），第 2 列=类型（下拉）
+void ColumnManagerDialog::buildRow(int r, const QString& title, const QString& key, const QString& type) {
+    m_table->setItem(r, 0, new QTableWidgetItem(title));
+
+    // 键下拉：内置键选项；若当前键不在选项中（自定义列），追加之以免丢失
+    auto* keyCombo = new QComboBox(this);
+    for (const QString& k : m_keyOptions) keyCombo->addItem(k);
+    if (keyCombo->findText(key) < 0) keyCombo->addItem(key);
+    keyCombo->setCurrentText(key);
+    m_table->setCellWidget(r, 1, keyCombo);
+
+    // 类型下拉：文本 / 数字
+    auto* typeCombo = new QComboBox(this);
+    typeCombo->addItem(tr("文本"), QStringLiteral("text"));
+    typeCombo->addItem(tr("数字"), QStringLiteral("number"));
+    int ti = typeCombo->findData(type);
+    if (ti < 0) ti = typeCombo->findData(QStringLiteral("text"));
+    typeCombo->setCurrentIndex(ti < 0 ? 0 : ti);
+    m_table->setCellWidget(r, 2, typeCombo);
+}
+
 void ColumnManagerDialog::setColumns(const std::vector<ColumnDef>& cols) {
     m_table->setRowCount(0);
     for (const auto& c : cols) {
-        int r = m_table->rowCount();
+        const int r = m_table->rowCount();
         m_table->insertRow(r);
-        m_table->setItem(r, 0, new QTableWidgetItem(c.title));
-        m_table->setItem(r, 1, new QTableWidgetItem(c.key));
-        m_table->setItem(r, 2, new QTableWidgetItem(c.type));
+        buildRow(r, c.title, c.key, c.type);
     }
 }
 
@@ -60,11 +80,11 @@ std::vector<ColumnDef> ColumnManagerDialog::columns() const {
     for (int r = 0; r < m_table->rowCount(); ++r) {
         ColumnDef c;
         auto* t = m_table->item(r, 0);
-        auto* k = m_table->item(r, 1);
-        auto* ty = m_table->item(r, 2);
+        auto* kc = qobject_cast<QComboBox*>(m_table->cellWidget(r, 1));
+        auto* tc = qobject_cast<QComboBox*>(m_table->cellWidget(r, 2));
         c.title = t ? t->text() : QString();
-        c.key = k ? k->text() : QString();
-        c.type = ty ? ty->text() : QStringLiteral("text");
+        c.key = kc ? kc->currentText() : QString();
+        c.type = tc ? tc->currentData().toString() : QStringLiteral("text");
         c.builtin = false;
         out.push_back(c);
     }
@@ -74,9 +94,9 @@ std::vector<ColumnDef> ColumnManagerDialog::columns() const {
 void ColumnManagerDialog::addColumnRow() {
     const int r = m_table->rowCount();
     m_table->insertRow(r);
-    m_table->setItem(r, 0, new QTableWidgetItem(tr("新列")));
-    m_table->setItem(r, 1, new QTableWidgetItem(QStringLiteral("col%1").arg(r + 1)));
-    m_table->setItem(r, 2, new QTableWidgetItem(QStringLiteral("text")));
+    // 新增列：键取首个内置键（避免自由输入），类型默认 text
+    const QString key = m_keyOptions.isEmpty() ? QStringLiteral("col%1").arg(r + 1) : m_keyOptions.first();
+    buildRow(r, tr("新列"), key, QStringLiteral("text"));
     m_table->selectRow(r);
 }
 
@@ -100,10 +120,23 @@ void ColumnManagerDialog::moveSelectedDown() {
 }
 
 void ColumnManagerDialog::SwapRows(int a, int b) {
-    for (int col = 0; col < m_table->columnCount(); ++col) {
-        QTableWidgetItem* ia = m_table->takeItem(a, col);
-        QTableWidgetItem* ib = m_table->takeItem(b, col);
-        m_table->setItem(a, col, ib);
-        m_table->setItem(b, col, ia);
+    // 标题（文本项）：直接换项
+    QTableWidgetItem* ia = m_table->takeItem(a, 0);
+    QTableWidgetItem* ib = m_table->takeItem(b, 0);
+    m_table->setItem(a, 0, ib);
+    m_table->setItem(b, 0, ia);
+    // 键 / 类型（下拉）：换选中值而非换控件（QTableWidget 替换 cellWidget 会删除旧控件）
+    for (int col = 1; col < m_table->columnCount(); ++col) {
+        auto* ca = qobject_cast<QComboBox*>(m_table->cellWidget(a, col));
+        auto* cb = qobject_cast<QComboBox*>(m_table->cellWidget(b, col));
+        if (!ca || !cb) continue;
+        const QString ta = ca->currentText();
+        const QString tb = cb->currentText();
+        const QVariant da = ca->currentData();
+        const QVariant db = cb->currentData();
+        if (ca->findText(tb) < 0) ca->addItem(tb, db); // 自定义键可能只在一侧
+        if (cb->findText(ta) < 0) cb->addItem(ta, da);
+        ca->setCurrentText(tb);
+        cb->setCurrentText(ta);
     }
 }

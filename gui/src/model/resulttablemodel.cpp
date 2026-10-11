@@ -65,7 +65,7 @@ QVariant ResultTableModel::headerData(int section, Qt::Orientation orientation, 
         case 6: return tr("模块基址");
         case 7: return tr("匹配字节");
         case 8: return tr("命中时间");
-        case 9: return tr("自定义");
+        case 9: return tr("备注");
         default: return {};
         }
     }

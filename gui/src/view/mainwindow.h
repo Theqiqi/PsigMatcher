@@ -43,7 +43,9 @@ public:
     QAction* showSignaturePageAction() const { return m_showSignatureAction; }
     QAction* showProcessPageAction() const { return m_showProcessAction; }
     QAction* showResultPageAction() const { return m_showResultAction; }
-    QAction* clearLogAction() const { return m_clearLogAction; }
+    QAction* toggleLogAction() const { return m_toggleLogAction; } // C-08：日志开关
+    QAction* clearLogAction() const { return m_clearLogAction; }   // C-08：仅日志右键使用
+    QMenu* logContextMenu() const { return m_logContextMenu; }    // C-08：日志窗口右键菜单
     QAction* aboutAction() const { return m_aboutAction; }
 
     // 语言动作 getter（供 ViewModel connect）
@@ -67,6 +69,10 @@ public:
     void setProgress(int value); // 0..100；负值隐藏
     void appendLog(const QString& text);   // 内部按级别着色
     void clearLog();
+    // 日志 dock 显隐与状态（C-08）
+    bool logDockVisible() const;
+    void setLogDockVisible(bool visible);
+    void setToggleLogChecked(bool checked);
     // 进程选定后锁定：隐藏进程页入口/进程动作，显示「重新选择进程」
     void setProcessSelectionLocked(bool locked);
     // 语言切换后刷新全部界面文案
@@ -110,7 +116,9 @@ private:
     QAction* m_showSignatureAction = nullptr;
     QAction* m_showProcessAction = nullptr;
     QAction* m_showResultAction = nullptr;
-    QAction* m_clearLogAction = nullptr;
+    QAction* m_toggleLogAction = nullptr;  // C-08：日志开关（视图菜单）
+    QAction* m_clearLogAction = nullptr;   // C-08：仅在日志右键菜单使用
+    QMenu* m_logContextMenu = nullptr;     // C-08：日志窗口右键菜单
     QAction* m_aboutAction = nullptr;
 
     QActionGroup* m_langGroup = nullptr;

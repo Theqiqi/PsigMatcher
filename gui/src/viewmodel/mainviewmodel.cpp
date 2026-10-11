@@ -41,15 +41,6 @@ ColumnDef toModelColumn(const psig::ColumnDef& c) {
     return m;
 }
 
-psig::ColumnDef toPsigColumn(const ColumnDef& c) {
-    psig::ColumnDef p;
-    p.key = c.key.toStdString();
-    p.title = c.title.toStdString();
-    p.type = c.type.toStdString();
-    p.builtin = c.builtin;
-    return p;
-}
-
 ResultRow toResultRow(const psig::MatchResult& m) {
     ResultRow r;
     r.patternName = QString::fromStdString(m.patternName);
@@ -86,17 +77,36 @@ QImage toQImage(const psig::IconBitmap& bmp) {
     return img.copy(); // 脱离临时缓冲，持有一份独立数据
 }
 
-// 结果导出列定义（键, 标题），顺序与 psig 结果列一致（不含派生的十进制地址列）
+// 结果导出列定义（键, 标题），顺序与 psig 结果列一致
 std::vector<std::pair<QString, QString>> resultColumnDefs() {
     return {{QStringLiteral("pattern_name"), QObject::tr("特征码名")},
             {QStringLiteral("process_name"), QObject::tr("进程")},
             {QStringLiteral("pid"), QObject::tr("PID")},
             {QStringLiteral("address"), QObject::tr("地址")},
+            {QStringLiteral("address_dec"), QObject::tr("地址(十进制)")}, // C-01：新增十进制地址列
             {QStringLiteral("module_name"), QObject::tr("模块")},
             {QStringLiteral("module_base"), QObject::tr("模块基址")},
             {QStringLiteral("matched_bytes"), QObject::tr("匹配字节")},
             {QStringLiteral("hit_time"), QObject::tr("命中时间")},
-            {QStringLiteral("custom"), QObject::tr("自定义")}};
+            {QStringLiteral("custom"), QObject::tr("备注")}};             // C-01：自定义 → 备注
+}
+
+// 结果导出表头：按当前语言（经 tr()）输出，与界面结果表一致；自定义列固定「备注」不随语言（C-05/C-06）
+QString resultHeaderForKey(const std::string& key) {
+    if (key == "custom") return QStringLiteral("备注"); // 自定义列不随语言
+    for (const auto& p : resultColumnDefs()) {
+        if (p.first.toStdString() == key) return p.second;
+    }
+    return QString();
+}
+
+// 特征码表内置列标题：按当前语言（经 tr()）；自定义列沿用其标题（不随语言，C-06）
+QString signatureHeaderForKey(const QString& key) {
+    if (key == QStringLiteral("name")) return QObject::tr("名称");
+    if (key == QStringLiteral("pattern")) return QObject::tr("特征码");
+    if (key == QStringLiteral("note")) return QObject::tr("备注");
+    if (key == QStringLiteral("process")) return QObject::tr("进程");
+    return QString();
 }
 
 // 对话框按钮接线（View 不 connect；统一在 VM 完成）
@@ -128,6 +138,7 @@ void MainViewModel::install(MainWindow* view) {
     m_view->signaturePage()->setModel(m_sigModel);
     m_view->processPage()->setModel(m_procModel);
     m_view->resultPage()->setModel(m_resultModel);
+    m_view->processPage()->setDefaultColumnWidths(); // C-07：进程列宽
 
     m_procWatcher = new QFutureWatcher<std::vector<psig::ProcessInfo>>(this);
     m_scanWatcher = new QFutureWatcher<std::vector<psig::MatchResult>>(this);
@@ -139,6 +150,7 @@ void MainViewModel::install(MainWindow* view) {
     bindResultPage();
     bindGlobalActions();
     bindContextMenus();
+    bindLogActions();                         // C-08：日志开关 + 日志右键清空
 
     applyInitialColumns();
 
@@ -150,7 +162,7 @@ void MainViewModel::install(MainWindow* view) {
     m_view->showProcessPage();
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("就绪，请选择目标进程"));
-    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.2.1 已就绪"));
+    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.2.2 已就绪"));
 
     onRefreshProcesses(); // C-09：启动后自动枚举一次进程
 }
@@ -210,7 +222,6 @@ void MainViewModel::bindGlobalActions() {
     connect(m_view->showProcessPageAction(), &QAction::triggered, m_view, &MainWindow::showProcessPage);
     connect(m_view->showResultPageAction(), &QAction::triggered, m_view, &MainWindow::showResultPage);
     connect(m_view->aboutAction(), &QAction::triggered, this, &MainViewModel::onAbout);
-    connect(m_view->clearLogAction(), &QAction::triggered, this, &MainViewModel::onClearLog);
     // 语言菜单（三项互斥，触发即切换）
     connect(m_view->languageZhAction(), &QAction::triggered, this,
             [this]() { applyLanguage(QStringLiteral("zh_CN")); });
@@ -248,6 +259,27 @@ void MainViewModel::onResultContextMenu(const QPoint& pos) {
     page->contextMenu()->exec(t->viewport()->mapToGlobal(pos));
 }
 
+// C-08：日志开关（视图菜单）与日志窗口右键「清空日志」
+void MainViewModel::bindLogActions() {
+    // 视图菜单的日志开关
+    connect(m_view->toggleLogAction(), &QAction::triggered, this, &MainViewModel::onToggleLog);
+    m_view->setToggleLogChecked(true); // 日志 dock 默认随主窗口显示
+    // 日志窗口右键菜单的「清空日志」
+    connect(m_view->logEdit(), &QPlainTextEdit::customContextMenuRequested, this,
+            &MainViewModel::onLogContextMenu);
+    connect(m_view->clearLogAction(), &QAction::triggered, this, &MainViewModel::onClearLog);
+}
+
+void MainViewModel::onLogContextMenu(const QPoint& pos) {
+    m_view->logContextMenu()->exec(m_view->logEdit()->viewport()->mapToGlobal(pos));
+}
+
+void MainViewModel::onToggleLog() {
+    const bool now = !m_view->logDockVisible();
+    m_view->setLogDockVisible(now);
+    m_view->setToggleLogChecked(now);
+}
+
 void MainViewModel::applyInitialColumns() {
     std::vector<ColumnDef> cols;
     for (const auto& c : psig::BuiltinSignatureColumns()) cols.push_back(toModelColumn(c));
@@ -274,6 +306,8 @@ void MainViewModel::refreshPersistentStatus() {
     m_view->setPersistentStatus(
         tr("就绪 | 目标 %1 | 进程 %2 | 特征码 %3").arg(target).arg(procs).arg(patterns));
 }
+
+void MainViewModel::markSignatureDirty() { m_sigDirty = true; }
 
 // ---------------------------------------------------------------------------
 // 语言
@@ -327,6 +361,7 @@ void MainViewModel::applyLanguage(const QString& code, bool feedback) {
 
 void MainViewModel::onAddSignatureRow() {
     m_sigModel->addRow(m_targetName); // C-08：自动填进程列
+    markSignatureDirty();             // C-04：标记为未保存改动
     m_view->signaturePage()->selectRow(m_sigModel->rowCount() - 1);
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已新增 1 行"));
@@ -338,6 +373,7 @@ void MainViewModel::onAddSignatureRows() {
     const int count = QInputDialog::getInt(m_view, tr("新增多行"), tr("新增行数："), 1, 1, 10000, 1, &ok);
     if (!ok) return; // 取消路径
     m_sigModel->addRows(count, m_targetName);
+    markSignatureDirty();             // C-04：标记为未保存改动
     m_view->signaturePage()->selectRow(m_sigModel->rowCount() - 1);
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已新增 %1 行").arg(count));
@@ -354,6 +390,7 @@ void MainViewModel::onDeleteSignatureRows() {
         return;
     }
     m_sigModel->removeRows(rows);
+    markSignatureDirty();             // C-04：标记为未保存改动
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已删除 %1 行").arg(rows.size()));
     logTagged(QStringLiteral("edit"), tr("删除特征码 %1 行").arg(rows.size()));
@@ -361,6 +398,10 @@ void MainViewModel::onDeleteSignatureRows() {
 
 void MainViewModel::onManageColumns() {
     ColumnManagerDialog dlg(m_view);
+    // C-02：键下拉选项来自 psig 内置列键（View 不依赖 psig，由 VM 注入）
+    QStringList keyOpts;
+    for (const auto& c : psig::BuiltinSignatureColumns()) keyOpts << QString::fromStdString(c.key);
+    dlg.setKeyOptions(keyOpts);
     dlg.setColumns(m_sigModel->columns());
     wireDialog(&dlg, dlg.buttonBox());
     connect(dlg.addBtn(), &QPushButton::clicked, &dlg, &ColumnManagerDialog::addColumnRow);
@@ -369,6 +410,7 @@ void MainViewModel::onManageColumns() {
     connect(dlg.downBtn(), &QPushButton::clicked, &dlg, &ColumnManagerDialog::moveSelectedDown);
     if (dlg.exec() != QDialog::Accepted) return;
     m_sigModel->setColumns(dlg.columns());
+    markSignatureDirty();             // C-04：列定义更新属未保存改动
     m_view->setTransientMessage(tr("列已更新"));
     logTagged(QStringLiteral("edit"), tr("更新列定义"));
 }
@@ -411,6 +453,7 @@ void MainViewModel::importSignaturesFromPath(const QString& path) {
         return;
     }
     applyTableToModel(table);
+    m_sigDirty = false;               // C-04：导入后视为已保存
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已导入 %1 条").arg(table.rows.size()));
     logTagged(QStringLiteral("import"), tr("%1 条").arg(table.rows.size()));
@@ -434,6 +477,7 @@ void MainViewModel::exportSignaturesToPath(const QString& path) {
         logTagged(QStringLiteral("error"), tr("导出失败: %1").arg(QString::fromStdString(err)));
         return;
     }
+    m_sigDirty = false;               // C-04：导出后视为已保存
     m_view->setTransientMessage(tr("已导出: %1").arg(path));
     logTagged(QStringLiteral("export"), tr("特征码 → %1").arg(path));
 }
@@ -474,8 +518,10 @@ void MainViewModel::onProcessFilterChanged(const QString& text) {
     auto* table = m_view->processPage()->table();
     const QString needle = text.trimmed();
     for (int r = 0; r < m_procModel->rowCount(); ++r) {
+        // C-03：按展示名过滤（空名进程使用系统进程兜底名）
+        const QString name = m_procModel->data(m_procModel->index(r, 1)).toString();
         const ProcessRow row = m_procModel->processAt(r);
-        bool show = needle.isEmpty() || row.name.contains(needle, Qt::CaseInsensitive) ||
+        bool show = needle.isEmpty() || name.contains(needle, Qt::CaseInsensitive) ||
                     row.path.contains(needle, Qt::CaseInsensitive);
         table->setRowHidden(r, !show);
     }
@@ -485,7 +531,10 @@ void MainViewModel::startIconLoad() {
     if (!m_procModel || m_procModel->rowCount() == 0) return;
     std::vector<uint32_t> pids;
     pids.reserve(static_cast<size_t>(m_procModel->rowCount()));
-    for (const auto& r : m_procModel->processes()) pids.push_back(r.pid);
+    // C-09：仅对可访问（有权限）的进程取图标；无权限进程不显示图标（不阻止选择）
+    for (const auto& r : m_procModel->processes()) {
+        if (r.accessible) pids.push_back(r.pid);
+    }
 
     MainViewModel* self = this;
     std::shared_ptr<std::atomic_bool> alive = m_alive;
@@ -510,7 +559,8 @@ void MainViewModel::applyProcessIcon(uint32_t pid, const QIcon& icon) {
     if (!m_procModel || icon.isNull()) return;
     const int n = m_procModel->rowCount();
     for (int r = 0; r < n; ++r) {
-        if (m_procModel->processAt(r).pid == pid) {
+        // C-09：仅对可访问进程注入图标
+        if (m_procModel->processAt(r).pid == pid && m_procModel->processAt(r).accessible) {
             m_procModel->setIcon(r, icon);
             break;
         }
@@ -537,7 +587,9 @@ void MainViewModel::onConfirmProcessSelection() {
     const int row = sel->selectedRows().first().row();
     const ProcessRow r = m_procModel->processAt(row);
     m_targetPid = r.pid;
-    m_targetName = r.name;
+    // C-03：空名进程（如 PID 0/4）沿用表格展示名（系统进程兜底名），避免目标名为空
+    m_targetName = m_procModel->data(m_procModel->index(row, 1)).toString();
+    if (m_targetName.isEmpty()) m_targetName = r.name;
     m_view->setProcessSelectionLocked(true);
     m_view->showSignaturePage();
     refreshPersistentStatus();
@@ -546,10 +598,31 @@ void MainViewModel::onConfirmProcessSelection() {
 }
 
 void MainViewModel::onReselectProcess() {
+    if (m_sigModel->rowCount() > 0 && m_sigDirty) {
+        if (!askSaveBeforeReselect()) return; // C-04：取消 → 中止重新选择
+    }
     m_view->setProcessSelectionLocked(false);
     m_view->showProcessPage();
     m_view->setTransientMessage(tr("请重新选择目标进程"));
     logTagged(QStringLiteral("nav"), tr("返回进程页"));
+}
+
+// C-04：重新选择进程前，若特征码表有未保存改动，弹窗询问是否保存；返回 false 表示取消（中止切换）
+bool MainViewModel::askSaveBeforeReselect() {
+    QMessageBox box(m_view);
+    box.setWindowTitle(tr("保存特征码"));
+    box.setText(tr("当前特征码表尚未保存，是否保存？"));
+    QPushButton* saveBtn = box.addButton(tr("保存"), QMessageBox::AcceptRole);
+    box.addButton(tr("不保存"), QMessageBox::DestructiveRole);
+    QPushButton* cancelBtn = box.addButton(tr("取消"), QMessageBox::RejectRole);
+    box.exec();
+    if (box.clickedButton() == cancelBtn) return false; // 取消 → 中止重新选择
+    if (box.clickedButton() == saveBtn) {
+        const QString path = QFileDialog::getSaveFileName(
+            m_view, tr("保存特征码"), QString(), tr("CSV (*.csv);;SQLite (*.db)"));
+        if (!path.isEmpty()) exportSignaturesToPath(path);
+    }
+    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -758,7 +831,7 @@ void MainViewModel::onAbout() {
 #endif
     AboutDialog dlg(m_view);
     wireDialog(&dlg, dlg.buttonBox());
-    dlg.setInfo(tr("进程特征码批量匹配器 v0.2.1\n"
+    dlg.setInfo(tr("进程特征码批量匹配器 v0.2.2\n"
                    "基于 psig 静态库（进程特征码批量匹配）\n"
                    "构建配置：%1\nQt 版本：%2")
                     .arg(cfg, QString::fromLatin1(qVersion())));
@@ -794,6 +867,10 @@ psig::ResultExportOptions MainViewModel::exportOptions() const {
     psig::ResultExportOptions o;
     o.templateText = m_templateText.toStdString();
     for (const auto& k : m_exportColumns) o.columns.push_back(k.toStdString());
+    // C-05/C-06：表头随界面语言；按 psig 实际选出的键顺序构造，保证与列一一对应
+    const std::vector<std::string> keys = psig::SelectResultKeys(o.columns);
+    o.headers.reserve(keys.size());
+    for (const auto& k : keys) o.headers.push_back(resultHeaderForKey(k).toStdString());
     return o;
 }
 
@@ -818,7 +895,16 @@ std::vector<psig::Pattern> MainViewModel::collectPatterns(std::string& err) cons
 
 psig::Table MainViewModel::tableFromModel() const {
     psig::Table t;
-    for (const auto& c : m_sigModel->columns()) t.columns.push_back(toPsigColumn(c));
+    // C-06：内置列标题随语言（经 tr()）；自定义列沿用其标题（不随语言）
+    for (const auto& c : m_sigModel->columns()) {
+        psig::ColumnDef p;
+        p.key = c.key.toStdString();
+        p.type = c.type.toStdString();
+        p.builtin = c.builtin;
+        const QString h = c.builtin ? signatureHeaderForKey(c.key) : QString();
+        p.title = (c.builtin && !h.isEmpty()) ? h.toStdString() : c.title.toStdString();
+        t.columns.push_back(p);
+    }
     for (const auto& r : m_sigModel->rows()) {
         psig::TableRow tr;
         for (const auto& cell : r.cells) tr.cells.push_back(cell.toStdString());

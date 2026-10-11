@@ -4,6 +4,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
+#include <QMenu>
 #include <QDockWidget>
 #include <QKeySequence>
 #include <QLabel>
@@ -47,7 +48,9 @@ void MainWindow::buildMenuAndToolbar() {
     m_showSignatureAction = new QAction(this);
     m_showProcessAction = new QAction(this);
     m_showResultAction = new QAction(this);
-    m_clearLogAction = new QAction(this);
+    m_toggleLogAction = new QAction(this);   // C-08：日志开关
+    m_toggleLogAction->setCheckable(true);
+    m_clearLogAction = new QAction(this);    // C-08：仅在日志右键菜单使用
     m_aboutAction = new QAction(this);
 
     // 图标（用标准图标，替代纯文字；tooltip 保留文字）
@@ -104,7 +107,8 @@ void MainWindow::buildMenuAndToolbar() {
     m_viewMenu->addAction(m_showSignatureAction);
     m_viewMenu->addAction(m_showResultAction);
     m_viewMenu->addSeparator();
-    m_viewMenu->addAction(m_clearLogAction);
+    // C-08：日志开关移入视图菜单；「清空日志」从视图菜单移除，改由日志窗口右键菜单触发
+    m_viewMenu->addAction(m_toggleLogAction);
 
     // 「语言」菜单：位于「视图」与「帮助」之间，三项互斥
     m_langGroup = new QActionGroup(this);
@@ -157,6 +161,10 @@ void MainWindow::buildStatusAndLog() {
     m_logEdit = new QPlainTextEdit(m_logDock);
     m_logEdit->setReadOnly(true);
     m_logEdit->setMaximumBlockCount(2000);
+    // C-08：日志窗口右键菜单（含「清空日志」）；由 ViewModel 连接动作
+    m_logEdit->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_logContextMenu = new QMenu(m_logEdit);
+    m_logContextMenu->addAction(m_clearLogAction);
     m_logDock->setWidget(m_logEdit);
     addDockWidget(Qt::BottomDockWidgetArea, m_logDock);
 
@@ -239,6 +247,16 @@ void MainWindow::appendLog(const QString& text) {
 
 void MainWindow::clearLog() { m_logEdit->clear(); }
 
+bool MainWindow::logDockVisible() const { return m_logDock && m_logDock->isVisible(); }
+
+void MainWindow::setLogDockVisible(bool visible) {
+    if (m_logDock) m_logDock->setVisible(visible);
+}
+
+void MainWindow::setToggleLogChecked(bool checked) {
+    if (m_toggleLogAction) m_toggleLogAction->setChecked(checked);
+}
+
 void MainWindow::setLanguageChecked(const QString& code) {
     if (code == QStringLiteral("zh_CN")) m_langZhAction->setChecked(true);
     else if (code == QStringLiteral("en_US")) m_langEnAction->setChecked(true);
@@ -246,7 +264,7 @@ void MainWindow::setLanguageChecked(const QString& code) {
 }
 
 void MainWindow::retranslateUi() {
-    setWindowTitle(tr("进程特征码批量匹配器 v0.2.1"));
+    setWindowTitle(tr("进程特征码批量匹配器 v0.2.2"));
 
     m_fileMenu->setTitle(tr("文件(&F)"));
     m_editMenu->setTitle(tr("编辑(&E)"));
@@ -270,6 +288,7 @@ void MainWindow::retranslateUi() {
     m_showSignatureAction->setText(tr("特征码编辑"));
     m_showProcessAction->setText(tr("进程选择"));
     m_showResultAction->setText(tr("匹配结果"));
+    m_toggleLogAction->setText(tr("日志")); // C-08：视图菜单开关
     m_clearLogAction->setText(tr("清空日志"));
     m_aboutAction->setText(tr("关于"));
     m_langZhAction->setText(tr("中文"));

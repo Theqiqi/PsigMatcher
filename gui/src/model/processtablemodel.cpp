@@ -24,7 +24,15 @@ QVariant ProcessTableModel::data(const QModelIndex& index, int role) const {
     if (role != Qt::DisplayRole) return {};
     switch (index.column()) {
     case 0: return r.pid;
-    case 1: return r.name;
+    case 1: {
+        // C-03：空名进程（如 PID 0/4 系统进程）兜底为系统进程名
+        if (r.name.isEmpty()) {
+            if (r.pid == 0) return tr("系统空闲进程");
+            if (r.pid == 4) return tr("系统");
+            return tr("未知进程");
+        }
+        return r.name;
+    }
     case 2: return r.path;
     case 3: return r.accessible ? tr("是") : tr("否");
     default: return {};

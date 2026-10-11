@@ -71,6 +71,16 @@
         <source>新列</source>
         <translation>新列</translation>
     </message>
+    <message>
+        <location filename="../../src/view/columnmanagerdialog.cpp" line="71" />
+        <source>文本</source>
+        <translation>文本</translation>
+    </message>
+    <message>
+        <location filename="../../src/view/columnmanagerdialog.cpp" line="72" />
+        <source>数字</source>
+        <translation>数字</translation>
+    </message>
 </context>
 <context>
     <name>ExportColumnsDialog</name>
@@ -99,8 +109,8 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="153" />
-        <source>进程特征码批量匹配器 v0.2.1 已就绪</source>
-        <translation>进程特征码批量匹配器 v0.2.1 已就绪</translation>
+        <source>进程特征码批量匹配器 v0.2.2 已就绪</source>
+        <translation>进程特征码批量匹配器 v0.2.2 已就绪</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="275" />
@@ -301,6 +311,11 @@
         <translation>返回进程页</translation>
     </message>
     <message>
+        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="604" />
+        <source>当前特征码表尚未保存，是否保存？</source>
+        <translation>当前特征码表尚未保存，是否保存？</translation>
+    </message>
+    <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="563" />
         <source>特征码错误: %1</source>
         <translation>特征码错误: %1</translation>
@@ -465,11 +480,11 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="761" />
-        <source>进程特征码批量匹配器 v0.2.1
+        <source>进程特征码批量匹配器 v0.2.2
 基于 psig 静态库（进程特征码批量匹配）
 构建配置：%1
 Qt 版本：%2</source>
-        <translation>进程特征码批量匹配器 v0.2.1
+        <translation>进程特征码批量匹配器 v0.2.2
 基于 psig 静态库（进程特征码批量匹配）
 构建配置：%1
 Qt 版本：%2</translation>
@@ -499,8 +514,8 @@ Qt 版本：%2</translation>
     <name>MainWindow</name>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="249" />
-        <source>进程特征码批量匹配器 v0.2.1</source>
-        <translation>进程特征码批量匹配器 v0.2.1</translation>
+        <source>进程特征码批量匹配器 v0.2.2</source>
+        <translation>进程特征码批量匹配器 v0.2.2</translation>
     </message>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="251" />
@@ -613,6 +628,11 @@ Qt 版本：%2</translation>
         <translation>清空日志</translation>
     </message>
     <message>
+        <location filename="../../src/view/mainwindow.cpp" line="291" />
+        <source>日志</source>
+        <translation>日志</translation>
+    </message>
+    <message>
         <location filename="../../src/view/mainwindow.cpp" line="274" />
         <source>关于</source>
         <translation>关于</translation>
@@ -693,6 +713,21 @@ Qt 版本：%2</translation>
         <source>可访问</source>
         <translation>可访问</translation>
     </message>
+    <message>
+        <location filename="../../src/model/processtablemodel.cpp" line="29" />
+        <source>系统空闲进程</source>
+        <translation>系统空闲进程</translation>
+    </message>
+    <message>
+        <location filename="../../src/model/processtablemodel.cpp" line="29" />
+        <source>系统</source>
+        <translation>系统</translation>
+    </message>
+    <message>
+        <location filename="../../src/model/processtablemodel.cpp" line="29" />
+        <source>未知进程</source>
+        <translation>未知进程</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -740,6 +775,16 @@ Qt 版本：%2</translation>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="99" />
         <source>自定义</source>
         <translation>自定义</translation>
+    </message>
+    <message>
+        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="94" />
+        <source>地址(十进制)</source>
+        <translation>地址(十进制)</translation>
+    </message>
+    <message>
+        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="49" />
+        <source>备注</source>
+        <translation>备注</translation>
     </message>
 </context>
 <context>
@@ -836,6 +881,11 @@ Qt 版本：%2</translation>
         <location filename="../../src/model/resulttablemodel.cpp" line="68" />
         <source>自定义</source>
         <translation>自定义</translation>
+    </message>
+    <message>
+        <location filename="../../src/model/resulttablemodel.cpp" line="68" />
+        <source>备注</source>
+        <translation>备注</translation>
     </message>
 </context>
 <context>

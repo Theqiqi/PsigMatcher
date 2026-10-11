@@ -1,13 +1,18 @@
 // test/unit/test_viewmodel.cpp - ViewModel 单元测试（事件链接、槽、调用链）
 #include <gtest/gtest.h>
 
+#include <QAbstractButton>
 #include <QAction>
+#include <QApplication>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QSignalSpy>
 #include <QTableView>
+#include <QTimer>
 #include <QtTest/QtTest>
 
+#include "model/signaturetablemodel.h"
 #include "unit/test_app.h"
 #include "view/mainwindow.h"
 #include "view/processselectionpage.h"
@@ -173,4 +178,55 @@ TEST(ViewModel, ApplyLanguageUpdatesLanguageMenuCheck) { // C-02
     EXPECT_TRUE(w.languageSystemAction()->isChecked());
     vm.applyLanguage(QStringLiteral("zh_CN"), false); // 还原
     EXPECT_TRUE(w.languageZhAction()->isChecked());
+}
+
+// C-06：内置列标题随语言切换；自定义列标题保持原样
+TEST(ViewModel, SignatureHeadersFollowLanguageExceptCustom) {
+    MainWindow w;
+    MainViewModel vm;
+    vm.install(&w);
+    auto* m = qobject_cast<SignatureTableModel*>(w.signaturePage()->table()->model());
+    ASSERT_NE(m, nullptr);
+    m->setColumns({{"name", "名称", "text", true}, {"c1", "自定义列", "text", false}});
+
+    vm.applyLanguage(QStringLiteral("en_US"), false);
+    EXPECT_EQ(m->headerData(0, Qt::Horizontal).toString(), QStringLiteral("Name"));
+    EXPECT_EQ(m->headerData(1, Qt::Horizontal).toString(), QStringLiteral("自定义列"));
+
+    vm.applyLanguage(QStringLiteral("zh_CN"), false);
+    EXPECT_EQ(m->headerData(0, Qt::Horizontal).toString(), QStringLiteral("名称"));
+    EXPECT_EQ(m->headerData(1, Qt::Horizontal).toString(), QStringLiteral("自定义列"));
+}
+
+// C-04：有未保存改动时重新选择进程会弹窗；「取消」中止切换（停留在特征码页）
+TEST(ViewModel, ReselectPromptsSaveAndCancelAborts) {
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    WAIT_ENUM(w);
+
+    w.processPage()->table()->selectRow(0);
+    w.confirmProcessAction()->trigger();
+    QTest::qWait(30);
+
+    w.signaturePage()->addRowAction()->trigger(); // 产生未保存改动
+    ASSERT_EQ(w.signaturePage()->table()->model()->rowCount(), 1);
+
+    QTimer::singleShot(150, []() {
+        for (QWidget* top : QApplication::topLevelWidgets()) {
+            auto* mb = qobject_cast<QMessageBox*>(top);
+            if (!mb) continue;
+            for (QAbstractButton* b : mb->buttons()) {
+                if (b->text() == QStringLiteral("取消")) {
+                    b->click();
+                    break;
+                }
+            }
+        }
+    });
+    w.reselectProcessAction()->trigger();
+    QTest::qWait(50);
+    EXPECT_TRUE(w.signaturePage()->isVisible());   // 取消 → 未切回进程页
+    EXPECT_FALSE(w.processPage()->isVisible());
 }

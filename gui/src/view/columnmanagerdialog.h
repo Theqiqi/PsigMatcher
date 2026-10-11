@@ -26,6 +26,9 @@ public:
     void setColumns(const std::vector<ColumnDef>& cols);
     std::vector<ColumnDef> columns() const;
 
+    // 键下拉选项（来自 psig 内置列键，由 ViewModel 注入；View 不依赖 psig）
+    void setKeyOptions(const QStringList& keys) { m_keyOptions = keys; }
+
     // 由 ViewModel 连接按钮后调用（View 内部只操作自身表格）
     void addColumnRow();             // 追加一空列
     void removeSelectedColumnRow();  // 删除选中列
@@ -34,6 +37,8 @@ public:
 
 private:
     void SwapRows(int a, int b);     // 交换两行的单元格项
+    // 构建一行：标题文本 + 键/类型下拉
+    void buildRow(int r, const QString& title, const QString& key, const QString& type);
 
     QTableWidget* m_table = nullptr;
     QPushButton* m_addBtn = nullptr;
@@ -41,4 +46,5 @@ private:
     QPushButton* m_upBtn = nullptr;
     QPushButton* m_downBtn = nullptr;
     QDialogButtonBox* m_buttonBox = nullptr;
+    QStringList m_keyOptions;
 };

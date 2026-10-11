@@ -3,8 +3,11 @@
 
 #include <QAction>
 #include <QActionGroup>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QHeaderView>
+#include <QMenu>
+#include <QMenuBar>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
@@ -14,6 +17,7 @@
 #include <QTableView>
 #include <QTableWidget>
 
+#include "model/processtablemodel.h"
 #include "model/resulttablemodel.h"
 #include "model/signaturetablemodel.h"
 #include "unit/test_app.h"
@@ -196,6 +200,85 @@ TEST(View, PagesRetranslate) {
     ResultPage rp;
     rp.retranslateUi();
     EXPECT_EQ(rp.selectColumnsAction()->text(), QString("选择导出列…"));
+}
+
+// C-02：列管理「键 / 类型」改为下拉选择（非自由输入），且取值反映下拉当前项
+TEST(View, ColumnManagerDialogKeyTypeCombos) {
+    ColumnManagerDialog dlg;
+    dlg.setKeyOptions({QStringLiteral("name"), QStringLiteral("pattern"), QStringLiteral("note")});
+    dlg.setColumns({{QStringLiteral("name"), QStringLiteral("名称"), QStringLiteral("text"), true},
+                    {QStringLiteral("pattern"), QStringLiteral("特征码"), QStringLiteral("number"), true}});
+    auto* kc = qobject_cast<QComboBox*>(dlg.table()->cellWidget(0, 1));
+    auto* tc = qobject_cast<QComboBox*>(dlg.table()->cellWidget(0, 2));
+    ASSERT_NE(kc, nullptr);
+    ASSERT_NE(tc, nullptr);
+    EXPECT_EQ(kc->currentText(), QStringLiteral("name"));
+    EXPECT_EQ(dlg.columns()[1].type, QStringLiteral("number"));
+
+    // 改下拉 → columns() 反映新值
+    kc->setCurrentText(QStringLiteral("note"));
+    tc->setCurrentIndex(tc->findData(QStringLiteral("number")));
+    auto cols = dlg.columns();
+    EXPECT_EQ(cols[0].key, QStringLiteral("note"));
+    EXPECT_EQ(cols[0].type, QStringLiteral("number"));
+    EXPECT_EQ(cols[0].title, QStringLiteral("名称"));
+
+    // 自定义键（不在内置选项中）不丢失
+    dlg.setColumns({{QStringLiteral("c1"), QStringLiteral("自定义列"), QStringLiteral("text"), false}});
+    auto* kc1 = qobject_cast<QComboBox*>(dlg.table()->cellWidget(0, 1));
+    ASSERT_NE(kc1, nullptr);
+    EXPECT_EQ(kc1->currentText(), QStringLiteral("c1"));
+    EXPECT_EQ(dlg.columns()[0].key, QStringLiteral("c1"));
+}
+
+// C-07：进程列默认宽度（名称 = PID×2、可访问 = PID、路径占剩余）
+TEST(View, ProcessSelectionPageDefaultColumnWidths) {
+    ProcessTableModel model;
+    model.setProcesses({{1, QStringLiteral("a.exe"), QStringLiteral("C:\\a.exe"), true}});
+    ProcessSelectionPage page;
+    page.setModel(&model);
+    page.setDefaultColumnWidths();
+    auto* t = page.table();
+    EXPECT_EQ(t->columnWidth(1), t->columnWidth(0) * 2);
+    EXPECT_EQ(t->columnWidth(3), t->columnWidth(0));
+    EXPECT_EQ(t->horizontalHeader()->sectionResizeMode(2), QHeaderView::Stretch);
+    // 仍可手动调整：非 Stretch 列保持 Interactive
+    EXPECT_EQ(t->horizontalHeader()->sectionResizeMode(1), QHeaderView::Interactive);
+}
+
+// C-08：视图菜单含日志开关；「清空日志」只在日志窗口右键菜单
+TEST(View, LogToggleInViewMenuAndClearInContextMenu) {
+    MainWindow w;
+    w.show(); // dock 可见性依赖主窗口已显示
+    ASSERT_NE(w.toggleLogAction(), nullptr);
+    EXPECT_TRUE(w.toggleLogAction()->isCheckable());
+    EXPECT_EQ(w.toggleLogAction()->text(), QString("日志"));
+
+    // 清空日志不在任何菜单栏菜单中
+    bool inMenuBar = false;
+    for (QMenu* menu : w.menuBar()->findChildren<QMenu*>()) {
+        if (menu->actions().contains(w.clearLogAction())) inMenuBar = true;
+    }
+    EXPECT_FALSE(inMenuBar);
+    // 日志开关在菜单栏中
+    bool toggleInMenuBar = false;
+    for (QMenu* menu : w.menuBar()->findChildren<QMenu*>()) {
+        if (menu->actions().contains(w.toggleLogAction())) toggleInMenuBar = true;
+    }
+    EXPECT_TRUE(toggleInMenuBar);
+
+    // 日志窗口右键菜单
+    EXPECT_EQ(w.logEdit()->contextMenuPolicy(), Qt::CustomContextMenu);
+    ASSERT_NE(w.logContextMenu(), nullptr);
+    EXPECT_TRUE(w.logContextMenu()->actions().contains(w.clearLogAction()));
+
+    // 显隐控制
+    w.setLogDockVisible(false);
+    EXPECT_FALSE(w.logDockVisible());
+    w.setToggleLogChecked(true);
+    EXPECT_TRUE(w.toggleLogAction()->isChecked());
+    w.setLogDockVisible(true);
+    EXPECT_TRUE(w.logDockVisible());
 }
 
 // C-02：语言菜单动作存在且互斥（QActionGroup）

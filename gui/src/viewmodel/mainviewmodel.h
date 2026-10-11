@@ -72,9 +72,11 @@ private slots:
     void onTemplateTextChanged();
     void onSelectExportColumns();
     void onAbout();
+    void onToggleLog();                           // C-08：日志 dock 显隐
     void onSignatureContextMenu(const QPoint& pos);
     void onProcessContextMenu(const QPoint& pos);
     void onResultContextMenu(const QPoint& pos);
+    void onLogContextMenu(const QPoint& pos);    // C-08：日志窗口右键菜单
 
 private:
     void bindSignaturePage();
@@ -82,12 +84,15 @@ private:
     void bindResultPage();
     void bindGlobalActions();
     void bindContextMenus();
+    void bindLogActions();                       // C-08：日志开关 + 日志右键清空
     void applyInitialColumns();
     void applyProcessFilter();                    // 按当前筛选框文本逐行 setRowHidden
-    void startIconLoad();                         // 为进程行异步取图标
+    void startIconLoad();                         // 为进程行异步取图标（仅 accessible）
     void applyProcessIcon(uint32_t pid, const QIcon& icon);
     void refreshPersistentStatus();
     void logTagged(const QString& tag, const QString& message); // 追加带级别标签的日志
+    void markSignatureDirty();                    // C-04：特征码表有未保存改动
+    bool askSaveBeforeReselect();                 // C-04：重新选择进程前保存提示（false=取消切换）
     std::vector<psig::Pattern> collectPatterns(std::string& err) const;
     std::vector<uint32_t> selectedPids() const;
     psig::Table tableFromModel() const;
@@ -112,4 +117,5 @@ private:
 
     QTranslator* m_translator = nullptr;       // 应用翻译器（VM 持有）
     QString m_language;                        // 当前语言码（""=跟随系统）
+    bool m_sigDirty = false;                   // C-04：特征码表是否有未保存改动
 };

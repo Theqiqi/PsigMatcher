@@ -42,6 +42,20 @@ ProcessSelectionPage::ProcessSelectionPage(QWidget* parent) : QWidget(parent) {
 
 void ProcessSelectionPage::setModel(QAbstractItemModel* model) { m_table->setModel(model); }
 
+void ProcessSelectionPage::setDefaultColumnWidths() {
+    auto* h = m_table->horizontalHeader();
+    h->setStretchLastSection(false); // 取消「最后一列拉伸」，改由 Path 列占用剩余宽度
+    const int base = 90;             // 基准列宽（PID）
+    // 均保持 Interactive，用户仍可手动拖动调整
+    h->setSectionResizeMode(0, QHeaderView::Interactive);
+    h->setSectionResizeMode(1, QHeaderView::Interactive);
+    h->setSectionResizeMode(2, QHeaderView::Stretch);   // 路径 = 剩余宽度
+    h->setSectionResizeMode(3, QHeaderView::Interactive);
+    m_table->setColumnWidth(0, base);        // PID
+    m_table->setColumnWidth(1, base * 2);    // 名称 = PID 的两倍
+    m_table->setColumnWidth(3, base);        // 可访问 = PID 同宽
+}
+
 void ProcessSelectionPage::retranslateUi() {
     m_filterEdit->setPlaceholderText(tr("模糊过滤进程名 / 路径…"));
     m_useAsTargetAction->setText(tr("以此进程为目标"));
