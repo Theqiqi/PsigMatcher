@@ -49,7 +49,8 @@ private:
     psig::ResultExportOptions exportOptions() const; // 变更：构造随语言 headers（C-01/C-05）
     QStringList resultColumnDefs() const;      // 变更：增加 address_dec、custom→备注（C-01）
     void applyInitialColumns();                // 变更：列管理下拉初始化（C-02）
-    void askSaveBeforeReselect();              // 新增：C-04 保存提示
+    bool askSaveBeforeReselect();               // 新增：C-04 保存提示（false=取消切换）
+    bool m_sigDirty = false;                   // 新增：C-04 特征码表未保存标记
 
     QString m_templateText;
     QStringList m_exportColumns;
@@ -68,7 +69,7 @@ private:
 - `startIconLoad()` / `applyProcessIcon()`（C-09）：枚举完成后仅对 `accessible==true` 的进程调用 `psig::ProcessIcon` 取图标并 `setIcon`；无权限进程不注入图标（仅文本显示），不阻止选中。
 - `onManageColumns()`（C-02）：列管理对话框键/类型改为下拉；`keyCombo` 选项来自 `psig::BuiltinSignatureColumns()` 的键（去重），`typeCombo` 为固定枚举；新增列仅改表元数据，不影响扫描匹配。
 - `bindLogActions()`（C-08）：`toggleLogAction` → `onToggleLog`（显隐日志 dock 并同步 `setChecked`）；`clearLogAction`（日志右键）→ `onClearLog`；视图菜单不再含清空日志。
-- `tableFromModel()` / `toPsigColumn`（C-05/C-06）：导出特征码表时内置列标题按 `m_language` 经 `BuiltinKeyFromTitle` 反向映射到键；自定义列直接取 `ColumnDef.title`（中文「备注」不随语言）。
+- `tableFromModel()`（C-05/C-06）：导出特征码表时内置列标题按当前语言经 `signatureHeaderForKey(key)` 的 `tr()` 输出；自定义列直接取 `ColumnDef.title`（不随语言）。
 
 ## 约束满足说明
 
