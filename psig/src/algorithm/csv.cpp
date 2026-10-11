@@ -54,6 +54,29 @@ std::string EscapeField(const std::string& f) {
     return out;
 }
 
+// 取首条逻辑 CSV 记录（尊重引号，含跨行引号字段）；record 去尾 \r
+void TakeFirstRecord(const std::string& text, std::string& record, std::string& rest) {
+    size_t i = 0;
+    bool inQuotes = false;
+    for (; i < text.size(); ++i) {
+        char c = text[i];
+        if (c == '"') {
+            if (inQuotes && i + 1 < text.size() && text[i + 1] == '"') { ++i; continue; }
+            inQuotes = !inQuotes;
+        } else if (c == '\n' && !inQuotes) {
+            break;
+        }
+    }
+    if (i < text.size()) {
+        record = text.substr(0, i);
+        rest = text.substr(i + 1);
+    } else {
+        record = text;
+        rest.clear();
+    }
+    if (!record.empty() && record.back() == '\r') record.pop_back();
+}
+
 } // namespace
 
 CsvTable ParseCsv(const std::string& text) {
@@ -100,6 +123,25 @@ std::string SerializeCsv(const std::vector<std::string>& headers,
         out += "\r\n";
     }
     return out;
+}
+
+std::string EncodeTemplateRecord(const std::string& tmpl) {
+    if (tmpl.empty()) return {};
+    return "#psig-template," + EscapeField(tmpl) + "\r\n";
+}
+
+bool ParseTemplateRecord(const std::string& text, std::string& tmpl, std::string& rest) {
+    tmpl.clear();
+    rest = text;
+    std::string record, tail;
+    TakeFirstRecord(text, record, tail);
+    std::vector<std::string> fields = SplitLine(record);
+    if (fields.size() >= 2 && fields[0] == "#psig-template") {
+        tmpl = fields[1];
+        rest = tail;
+        return true;
+    }
+    return false;
 }
 
 } // namespace psig::algorithm

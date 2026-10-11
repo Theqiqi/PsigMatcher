@@ -44,3 +44,28 @@ TEST(SerializeCsv, EmptyRows) {
     std::string text = SerializeCsv({"a", "b"}, {});
     EXPECT_NE(text.find("a,b"), std::string::npos);
 }
+
+TEST(TemplateRecord, EncodeEmpty) {
+    EXPECT_TRUE(EncodeTemplateRecord("").empty());
+}
+
+TEST(TemplateRecord, RoundTripWithSpecialChars) {
+    const std::string tmpl = "第一行\n含,逗号 与 \"引号\"\n最后一行";
+    std::string text = EncodeTemplateRecord(tmpl) + SerializeCsv({"名称", "特征码"}, {{"p1", "AA BB"}});
+    std::string got, rest;
+    ASSERT_TRUE(ParseTemplateRecord(text, got, rest));
+    EXPECT_EQ(got, tmpl);
+    auto t = ParseCsv(rest);
+    ASSERT_EQ(t.headers.size(), 2u);
+    ASSERT_EQ(t.rows.size(), 1u);
+    EXPECT_EQ(t.rows[0][1], "AA BB");
+}
+
+TEST(TemplateRecord, AbsentRecord) {
+    std::string tmpl = "x", rest;
+    bool found = ParseTemplateRecord("名称,特征码\r\np1,AA BB\r\n", tmpl, rest);
+    EXPECT_FALSE(found);
+    EXPECT_TRUE(tmpl.empty());
+    auto t = ParseCsv(rest);
+    ASSERT_EQ(t.rows.size(), 1u);
+}

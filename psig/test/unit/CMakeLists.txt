@@ -5,6 +5,7 @@ add_executable(psig_unit
     test_pattern.cpp
     test_csv.cpp
     test_codec.cpp
+    test_result_columns.cpp
 )
 
 target_include_directories(psig_unit PRIVATE ${CMAKE_SOURCE_DIR}/src)

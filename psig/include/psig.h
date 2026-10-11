@@ -1,5 +1,5 @@
 // psig.h - 公共 API（进程特征码批量匹配静态库）
-// 版本 v0.1.0
+// 版本 v0.2.0
 // 说明：本头文件是 psig 静态库唯一对外契约；GUI 只能经此公共 API 调用静态库能力。
 // 约束：静态库不依赖 Qt；所有公共 API 不抛异常，用返回值/出参表达错误；线程安全。
 #pragma once
@@ -44,6 +44,7 @@ struct MatchResult {
     uint64_t moduleBase = 0;     // 模块基址
     std::string matchedBytes;    // 命中处字节（hex 串）
     std::string hitTime;         // 命中时间 ISO8601
+    std::string custom;          // 自定义列文本（可空，随导出携带）
 };
 
 // 动态列表格：列定义
@@ -63,6 +64,13 @@ struct TableRow {
 struct Table {
     std::vector<ColumnDef> columns;
     std::vector<TableRow> rows;
+    std::string templateText;    // 表级模板文本（多行，可空；随导入/导出携带）
+};
+
+// 匹配结果导出选项
+struct ResultExportOptions {
+    std::string templateText;            // 表首模板文本（可空；TXT 置于最前 / CSV 前置记录 / DB 元数据）
+    std::vector<std::string> columns;    // 要导出的结果列键（空=全部）。键见 psig 结果列：pattern_name/process_name/pid/address/module_name/module_base/matched_bytes/hit_time/custom
 };
 
 // 扫描进度
@@ -118,8 +126,12 @@ bool ExportSignaturesCsv(const std::string& path, const Table& table, std::strin
 bool ExportSignaturesDb(const std::string& path, const Table& table, std::string& err);
 
 // 导出匹配结果（CSV / SQLite .db / TXT）；失败返回 false 并置 err
-bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& results, std::string& err);
-bool ExportResultsDb(const std::string& path, const std::vector<MatchResult>& results, std::string& err);
-bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& results, std::string& err);
+// options 可省略（默认全部列、无模板）
+bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& results,
+                      std::string& err, const ResultExportOptions& options = {});
+bool ExportResultsDb(const std::string& path, const std::vector<MatchResult>& results,
+                     std::string& err, const ResultExportOptions& options = {});
+bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& results,
+                      std::string& err, const ResultExportOptions& options = {});
 
 } // namespace psig

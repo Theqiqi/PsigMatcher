@@ -10,6 +10,7 @@ add_library(psig STATIC
     algorithm/pattern.cpp
     algorithm/module_locate.cpp
     algorithm/csv.cpp
+    algorithm/result_columns.cpp
     atomic/win_process.cpp
     atomic/file_io.cpp
     atomic/sqlite_io.cpp

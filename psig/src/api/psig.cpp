@@ -8,6 +8,7 @@
 #include "algorithm/csv.h"
 #include "algorithm/module_locate.h"
 #include "algorithm/pattern.h"
+#include "algorithm/result_columns.h"
 #include "atomic/file_io.h"
 #include "atomic/sqlite_io.h"
 #include "atomic/win_process.h"
@@ -234,7 +235,14 @@ Table ImportSignaturesCsv(const std::string& path, std::string& err) {
         err = "无法读取文件: " + path;
         return table;
     }
-    algorithm::CsvTable csv = algorithm::ParseCsv(text);
+    // 前置模板记录（若存在）
+    std::string tmpl, rest;
+    if (algorithm::ParseTemplateRecord(text, tmpl, rest)) {
+        table.templateText = tmpl;
+    } else {
+        rest = text;
+    }
+    algorithm::CsvTable csv = algorithm::ParseCsv(rest);
     for (size_t i = 0; i < csv.headers.size(); ++i) {
         const std::string& title = csv.headers[i];
         std::string builtinKey = BuiltinKeyFromTitle(title);
@@ -282,6 +290,15 @@ Table ImportSignaturesDb(const std::string& path, std::string& err) {
         if (!r.empty()) DecodeCells(r[0], tr.cells);
         table.rows.push_back(std::move(tr));
     }
+    // 表级模板文本（旧库无 sig_meta 时忽略）
+    if (atomic::SqliteTableExists(db, "sig_meta")) {
+        std::vector<std::vector<std::string>> meta;
+        std::string metaErr;
+        if (atomic::SqliteQuery(db, "SELECT value FROM sig_meta WHERE key='template';", meta, metaErr) &&
+            !meta.empty() && !meta[0].empty()) {
+            table.templateText = meta[0][0];
+        }
+    }
     atomic::SqliteClose(db);
     return table;
 }
@@ -292,7 +309,8 @@ bool ExportSignaturesCsv(const std::string& path, const Table& table, std::strin
     for (const auto& c : table.columns) headers.push_back(c.title);
     std::vector<std::vector<std::string>> rows;
     for (const auto& r : table.rows) rows.push_back(r.cells);
-    std::string text = algorithm::SerializeCsv(headers, rows);
+    std::string text = algorithm::EncodeTemplateRecord(table.templateText) +
+                       algorithm::SerializeCsv(headers, rows);
     if (!atomic::WriteTextFile(path, text)) {
         err = "无法写入文件: " + path;
         return false;
@@ -306,11 +324,18 @@ bool ExportSignaturesDb(const std::string& path, const Table& table, std::string
     if (!db) return false;
     bool ok = atomic::SqliteExec(db, "DROP TABLE IF EXISTS sig_columns;", err) &&
               atomic::SqliteExec(db, "DROP TABLE IF EXISTS sig_rows;", err) &&
+              atomic::SqliteExec(db, "DROP TABLE IF EXISTS sig_meta;", err) &&
               atomic::SqliteExec(db,
                   "CREATE TABLE sig_columns(key TEXT PRIMARY KEY, title TEXT, type TEXT, "
                   "builtin INTEGER, ord INTEGER);", err) &&
               atomic::SqliteExec(db,
-                  "CREATE TABLE sig_rows(id INTEGER PRIMARY KEY AUTOINCREMENT, cells TEXT);", err);
+                  "CREATE TABLE sig_rows(id INTEGER PRIMARY KEY AUTOINCREMENT, cells TEXT);", err) &&
+              atomic::SqliteExec(db,
+                  "CREATE TABLE sig_meta(key TEXT PRIMARY KEY, value TEXT);", err);
+    if (ok && !table.templateText.empty()) {
+        ok = atomic::SqliteRun(db, "INSERT INTO sig_meta(key,value) VALUES('template',?);",
+                               {table.templateText}, err);
+    }
     if (ok) {
         for (size_t i = 0; i < table.columns.size() && ok; ++i) {
             const auto& c = table.columns[i];
@@ -336,24 +361,36 @@ bool ExportSignaturesDb(const std::string& path, const Table& table, std::string
 
 namespace {
 std::vector<std::string> ResultHeaders() {
-    return {"特征码名", "进程", "PID", "地址", "模块", "模块基址", "匹配字节", "命中时间"};
+    std::vector<std::string> h;
+    for (const auto& d : algorithm::ResultColumnDefs()) h.push_back(d.second);
+    return h;
 }
-std::vector<std::string> ResultRow(const MatchResult& m) {
+
+// 一行结果的 9 个值，顺序与 ResultColumnDefs() 一致
+std::vector<std::string> ResultRowValues(const MatchResult& m) {
     std::ostringstream addr, base;
     addr << "0x" << std::hex << std::uppercase << m.address;
     base << "0x" << std::hex << std::uppercase << m.moduleBase;
     return {m.patternName, data::WideToUtf8(m.processName), std::to_string(m.pid),
             addr.str(), data::WideToUtf8(m.moduleName), base.str(),
-            m.matchedBytes, m.hitTime};
+            m.matchedBytes, m.hitTime, m.custom};
+}
+
+bool IsNumericResultKey(const std::string& k) {
+    return k == "pid" || k == "address" || k == "module_base";
 }
 } // namespace
 
-bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& results, std::string& err) {
+bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& results,
+                      std::string& err, const ResultExportOptions& options) {
     err.clear();
     std::vector<std::vector<std::string>> rows;
     rows.reserve(results.size());
-    for (const auto& m : results) rows.push_back(ResultRow(m));
-    std::string text = algorithm::SerializeCsv(ResultHeaders(), rows);
+    for (const auto& m : results) rows.push_back(ResultRowValues(m));
+    std::vector<std::string> headers = ResultHeaders();
+    algorithm::FilterResultColumns(options.columns, headers, rows);
+    std::string text = algorithm::EncodeTemplateRecord(options.templateText) +
+                       algorithm::SerializeCsv(headers, rows);
     if (!atomic::WriteTextFile(path, text)) {
         err = "无法写入文件: " + path;
         return false;
@@ -361,43 +398,80 @@ bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& r
     return true;
 }
 
-bool ExportResultsDb(const std::string& path, const std::vector<MatchResult>& results, std::string& err) {
+bool ExportResultsDb(const std::string& path, const std::vector<MatchResult>& results,
+                     std::string& err, const ResultExportOptions& options) {
     err.clear();
     atomic::SqliteDb* db = atomic::SqliteOpen(path, err);
     if (!db) return false;
+
+    const std::vector<std::string> keys = algorithm::SelectResultKeys(options.columns);
+    std::string createSql = "CREATE TABLE results(";
+    for (size_t i = 0; i < keys.size(); ++i) {
+        if (i) createSql += ",";
+        createSql += keys[i] + (IsNumericResultKey(keys[i]) ? " INTEGER" : " TEXT");
+    }
+    createSql += ");";
+
+    std::string insertSql = "INSERT INTO results(";
+    std::string placeholders;
+    for (size_t i = 0; i < keys.size(); ++i) {
+        if (i) { insertSql += ","; placeholders += ","; }
+        insertSql += keys[i];
+        placeholders += "?";
+    }
+    insertSql += ") VALUES(" + placeholders + ");";
+
     bool ok = atomic::SqliteExec(db, "DROP TABLE IF EXISTS results;", err) &&
-              atomic::SqliteExec(db,
-                  "CREATE TABLE results(pattern_name TEXT, process_name TEXT, pid INTEGER, "
-                  "address INTEGER, module_name TEXT, module_base INTEGER, matched_bytes TEXT, "
-                  "hit_time TEXT);", err);
+              atomic::SqliteExec(db, "DROP TABLE IF EXISTS result_meta;", err) &&
+              atomic::SqliteExec(db, createSql, err) &&
+              atomic::SqliteExec(db, "CREATE TABLE result_meta(key TEXT PRIMARY KEY, value TEXT);", err);
+    if (ok && !options.templateText.empty()) {
+        ok = atomic::SqliteRun(db, "INSERT INTO result_meta(key,value) VALUES('template',?);",
+                               {options.templateText}, err);
+    }
+
+    const auto defs = algorithm::ResultColumnDefs();
     for (const auto& m : results) {
         if (!ok) break;
-        ok = atomic::SqliteRun(db,
-            "INSERT INTO results(pattern_name,process_name,pid,address,module_name,module_base,"
-            "matched_bytes,hit_time) VALUES(?,?,?,?,?,?,?,?);",
-            {m.patternName, data::WideToUtf8(m.processName), std::to_string(m.pid),
-             std::to_string(m.address), data::WideToUtf8(m.moduleName),
-             std::to_string(m.moduleBase), m.matchedBytes, m.hitTime}, err);
+        const std::vector<std::string> all = ResultRowValues(m);
+        std::vector<std::string> vals;
+        vals.reserve(keys.size());
+        for (const auto& k : keys) {
+            size_t idx = 0;
+            for (size_t i = 0; i < defs.size(); ++i) {
+                if (defs[i].first == k) { idx = i; break; }
+            }
+            vals.push_back(idx < all.size() ? all[idx] : std::string());
+        }
+        ok = atomic::SqliteRun(db, insertSql, vals, err);
     }
     atomic::SqliteClose(db);
     return ok;
 }
 
-bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& results, std::string& err) {
+bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& results,
+                      std::string& err, const ResultExportOptions& options) {
     err.clear();
+    std::vector<std::vector<std::string>> rows;
+    rows.reserve(results.size());
+    for (const auto& m : results) rows.push_back(ResultRowValues(m));
+    std::vector<std::string> headers = ResultHeaders();
+    algorithm::FilterResultColumns(options.columns, headers, rows);
+
     std::ostringstream out;
-    out << "匹配结果 (" << results.size() << " 条)\n";
+    if (!options.templateText.empty()) {
+        out << options.templateText << "\n";
+        out << "========================================\n";
+    }
+    out << "匹配结果 (" << rows.size() << " 条)\n";
     out << "========================================\n";
-    for (size_t i = 0; i < results.size(); ++i) {
-        const auto& m = results[i];
-        std::ostringstream addr;
-        addr << "0x" << std::hex << std::uppercase << m.address;
-        out << "[" << (i + 1) << "] " << m.patternName
-            << " | " << data::WideToUtf8(m.processName) << " (PID " << m.pid << ")"
-            << " | 地址 " << addr.str()
-            << " | 模块 " << data::WideToUtf8(m.moduleName)
-            << " | 字节 " << m.matchedBytes
-            << " | " << m.hitTime << "\n";
+    for (size_t i = 0; i < rows.size(); ++i) {
+        out << "[" << (i + 1) << "] ";
+        for (size_t j = 0; j < headers.size(); ++j) {
+            if (j) out << " | ";
+            out << headers[j] << "=" << (j < rows[i].size() ? rows[i][j] : std::string());
+        }
+        out << "\n";
     }
     if (!atomic::WriteTextFile(path, out.str())) {
         err = "无法写入文件: " + path;

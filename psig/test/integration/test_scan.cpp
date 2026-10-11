@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -188,6 +189,118 @@ TEST(Integration, ExportResultsFormats) {
         CloseHandle(h);
     }
     EXPECT_NE(content.find("dummy.exe"), std::string::npos);
+    DeleteFileA(csv.c_str());
+    DeleteFileA(db.c_str());
+    DeleteFileA(txt.c_str());
+}
+
+namespace {
+std::string ReadAll(const std::string& path) {
+    std::string content;
+    HANDLE h = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+                           OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h != INVALID_HANDLE_VALUE) {
+        char buf[4096];
+        DWORD n = 0;
+        while (ReadFile(h, buf, sizeof(buf) - 1, &n, nullptr) && n > 0) {
+            buf[n] = 0;
+            content += buf;
+        }
+        CloseHandle(h);
+    }
+    return content;
+}
+} // namespace
+
+// 特征码表 CSV 携带模板文本往返
+TEST(Integration, SignatureCsvTemplateRoundTrip) {
+    psig::Table t;
+    t.columns = psig::BuiltinSignatureColumns();
+    t.rows = {{{"p1", "48 8B ?? 05", "n1"}}};
+    t.templateText = "多行模板\n含,逗号 与 \"引号\"";
+    std::string err;
+    std::string path = TempPath("psig_sig_tmpl.csv");
+    ASSERT_TRUE(psig::ExportSignaturesCsv(path, t, err)) << err;
+    psig::Table back = psig::ImportSignaturesCsv(path, err);
+    ASSERT_EQ(back.rows.size(), 1u) << err;
+    EXPECT_EQ(back.templateText, t.templateText);
+    EXPECT_EQ(back.rows[0].cells[1], "48 8B ?? 05");
+    DeleteFileA(path.c_str());
+}
+
+// 特征码表 DB 携带模板文本往返
+TEST(Integration, SignatureDbTemplateRoundTrip) {
+    psig::Table t;
+    t.columns = psig::BuiltinSignatureColumns();
+    t.rows = {{{"p1", "DE AD", "n1"}}};
+    t.templateText = "DB模板\n第二行";
+    std::string err;
+    std::string path = TempPath("psig_sig_tmpl.db");
+    DeleteFileA(path.c_str());
+    ASSERT_TRUE(psig::ExportSignaturesDb(path, t, err)) << err;
+    psig::Table back = psig::ImportSignaturesDb(path, err);
+    ASSERT_EQ(back.rows.size(), 1u) << err;
+    EXPECT_EQ(back.templateText, t.templateText);
+    DeleteFileA(path.c_str());
+}
+
+// 旧 CSV（无模板记录）导入不报错且模板为空
+TEST(Integration, SignatureCsvNoTemplateCompat) {
+    std::string path = TempPath("psig_sig_old.csv");
+    HANDLE h = CreateFileA(path.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                           FILE_ATTRIBUTE_NORMAL, nullptr);
+    ASSERT_NE(h, INVALID_HANDLE_VALUE);
+    const char* body = "名称,特征码,备注\r\np1,AA BB,n\r\n";
+    DWORD written = 0;
+    WriteFile(h, body, static_cast<DWORD>(std::strlen(body)), &written, nullptr);
+    CloseHandle(h);
+
+    std::string err;
+    psig::Table back = psig::ImportSignaturesCsv(path, err);
+    EXPECT_TRUE(err.empty()) << err;
+    ASSERT_EQ(back.rows.size(), 1u);
+    EXPECT_TRUE(back.templateText.empty());
+    DeleteFileA(path.c_str());
+}
+
+// 结果导出：模板文本 + 自定义列 + 选择列子集
+TEST(Integration, ExportResultsOptionsAndCustom) {
+    std::vector<psig::MatchResult> results;
+    psig::MatchResult m;
+    m.patternName = "p1";
+    m.pid = 4321;
+    m.processName = L"opt.exe";
+    m.address = 0x140002000;
+    m.moduleName = L"opt.exe";
+    m.moduleBase = 0x140000000;
+    m.matchedBytes = "AA BB";
+    m.hitTime = "2026-10-11T13:00:00";
+    m.custom = "我的自定义值";
+    results.push_back(m);
+
+    psig::ResultExportOptions opt;
+    opt.templateText = "结果模板\n行2";
+    opt.columns = {"pid", "custom"};
+
+    std::string err;
+    std::string csv = TempPath("psig_res_opt.csv");
+    std::string db = TempPath("psig_res_opt.db");
+    std::string txt = TempPath("psig_res_opt.txt");
+    DeleteFileA(db.c_str());
+    ASSERT_TRUE(psig::ExportResultsCsv(csv, results, err, opt)) << err;
+    ASSERT_TRUE(psig::ExportResultsDb(db, results, err, opt)) << err;
+    ASSERT_TRUE(psig::ExportResultsTxt(txt, results, err, opt)) << err;
+
+    const std::string csvText = ReadAll(csv);
+    EXPECT_NE(csvText.find("#psig-template"), std::string::npos);
+    EXPECT_NE(csvText.find("我的自定义值"), std::string::npos);
+    EXPECT_NE(csvText.find("PID"), std::string::npos);
+    EXPECT_NE(csvText.find("自定义"), std::string::npos);
+    EXPECT_EQ(csvText.find("特征码名"), std::string::npos); // 未选列不导出
+
+    const std::string txtText = ReadAll(txt);
+    EXPECT_EQ(txtText.rfind("结果模板", 0), 0u); // 模板位于文件最前
+
     DeleteFileA(csv.c_str());
     DeleteFileA(db.c_str());
     DeleteFileA(txt.c_str());
