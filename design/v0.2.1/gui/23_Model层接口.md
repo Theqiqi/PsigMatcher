@@ -32,7 +32,7 @@ public:
 | 2 | 路径 | 否 |
 | 3 | 可访问 | 否 |
 
-- `sort()`：列 0=PID（数值）、1=名称（忽略大小写）、2=路径、3=可访问（bool）；排序后就地重排 `m_rows` 并 `layoutChanged`。
+- `sort()`：列 0=PID（数值）、1=名称（忽略大小写）、2=路径、3=可访问（bool）；以 `std::stable_sort` 重排 `m_rows` 并 `beginResetModel/endResetModel`（重置后由 VM 重新应用筛选）。
 
 ## SignatureTableModel（增量）
 
@@ -48,6 +48,8 @@ public:
 
 - `addRow/addRows`：插入空行；若存在键为 `process` 的列且 `processDefault` 非空，则写入该列。
 - `addRows`：`beginInsertRows(first, last)` 一次性插入 `count` 行。
+- `headerData`：内置列（`name`/`pattern`/`note`/`process`）标题经 `tr()` 返回（随语言切换）；自定义列沿用其 `ColumnDef.title`。
+- `retranslate()`（新增，三个 Model 均提供）：语言切换后 `emit headerDataChanged(Qt::Horizontal, 0, n-1)` 刷新表头。
 
 ## model/types.h（增量）
 

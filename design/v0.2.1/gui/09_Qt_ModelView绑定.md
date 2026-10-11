@@ -35,7 +35,7 @@
 
 - `void addRow(const QString& processDefault = QString())`：**修改**，新增行时可选填入默认值（写入「进程」列键对应单元格）。
 - `void addRows(int count, const QString& processDefault = QString())`：**新增**，一次性插入 `count` 行（`beginInsertRows(first, last)`）。
-- 进程列键：`process`（由 `BuiltinSignatureColumns()` 定义）；默认值仅在存在该键时写入。
+- 进程列键：`process`（**GUI 侧内置列**，由 VM 在 `applyInitialColumns()` 中于 psig 内置列之后追加；psig 的 `BuiltinSignatureColumns()` 仍为 name/pattern/note 三列，未改动静态库）；默认值仅在存在该键时写入。
 
 ## 4. 数据流（增量）
 

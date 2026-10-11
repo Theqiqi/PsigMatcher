@@ -35,3 +35,30 @@
 - C-03（CSV BOM）与 C-12（进程图标）需扩展静态库公共 API，走静态库流程（步骤 16-21 判定与交接）。
 - C-02 采用 Qt 标准翻译体系（.ts/.qm + QTranslator），lupdate/lrelease 由 Qt 独立安装自带（步骤 37 记录）。
 - C-07 仅 Release 取消控制台，Debug 保留控制台便于调试（经确认）。
+
+> 以上开放问题均已在实现阶段落实并验证：静态库 API 已扩展并测试通过（Debug/Release 各 38 单元 + 13 集成全绿）；lupdate/lrelease 已用于生成 `.ts`/`.qm` 并嵌入资源；Release 子系统确认为 `WINDOWS`（无控制台），Debug 为 `CONSOLE`。
+
+## 验证结果
+
+### 构建
+
+- `psig` 静态库：Debug / Release 均构建通过；v0.2.1 新增 `IconBitmap`、`ProcessIcon`、`DefaultProcessIcon` 与 `win_icon` 原子层（链接 `shell32/user32/gdi32`）。
+- `psig_gui`：Debug（共享 Qt `/MDd`）与 Release（静态 Qt `/MT`，`WIN32_EXECUTABLE` 取消控制台）均构建通过；`.qm` 经自定义 `lrelease` 命令生成并嵌入资源前缀 `/i18n`。
+
+### 测试
+
+| 层 | Debug | Release |
+| --- | --- | --- |
+| 单元（view/model/viewmodel/mvvm/userflow 共 5 个可执行） | 5/5 通过 | 5/5 通过 |
+| E2E（真实启动 + 像素/退出码断言） | — | 7/7 通过 |
+| psig 单元 + 集成 | 38 + 13 通过 | 38 + 13 通过 |
+
+### E2E 覆盖要点（对应改动点）
+
+- 启动即进程选择页、自动刷新填充进程表（C-09）；窗口标题随系统语言显示英文（C-02 默认跟随系统）。
+- 进程表含图标、筛选框在底部（C-12/C-09）；特征码页含「进程」列（C-08）。
+- 白底主题、彩色日志、关于/导出列/列管理对话框交互（C-01/C-04/C-05/C-13/C-14）。
+
+## 结论
+
+v0.2.1 全部 14 个改动点已实现并通过构建与测试验证；版本目录 `design/v0.2.1/` 与源码、静态库同步归档；以 tag `v0.2.1` 标记。

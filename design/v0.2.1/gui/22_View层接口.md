@@ -42,6 +42,7 @@ public:
     QAction* manageColumnsAction() const;     // 列管理
     void setModel(QAbstractItemModel*);
     void selectRow(int row);
+    void retranslateUi();                     // 新增：语言切换后刷新本页文案
 };
 ```
 
@@ -58,6 +59,7 @@ public:
     QAction* refreshAction() const;
     QAction* selectAllAction() const;
     void setModel(QAbstractItemModel*);
+    void retranslateUi();                     // 新增：刷新本页文案（含筛选框占位符）
 };
 ```
 
@@ -66,7 +68,7 @@ public:
 
 ## ResultPage（增量）
 
-- 接口不变（沿用 v0.2.0）；配色由全局 `style.qss` 控制（白底）。
+- 沿用 v0.2.0 接口，另加 `void retranslateUi();`（刷新模板框占位符与右键菜单文案）；配色由全局 `style.qss` 控制（白底）。
 
 ## 对话框（增量）
 
