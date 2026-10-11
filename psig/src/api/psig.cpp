@@ -67,11 +67,11 @@ ColumnDef MakeColumn(const std::string& key, const std::string& title,
     return c;
 }
 
-// CSV 表头标题 -> 内置列键；非内置返回空
+// CSV 表头标题 -> 内置列键；非内置返回空（支持中英文标题，保证跨语言导入往返）
 std::string BuiltinKeyFromTitle(const std::string& title) {
-    if (title == "name" || title == "名称") return "name";
-    if (title == "pattern" || title == "特征码") return "pattern";
-    if (title == "note" || title == "备注") return "note";
+    if (title == "name" || title == "名称" || title == "Name") return "name";
+    if (title == "pattern" || title == "特征码" || title == "Signature" || title == "Pattern") return "pattern";
+    if (title == "note" || title == "备注" || title == "Note" || title == "Remarks") return "note";
     return {};
 }
 
@@ -382,20 +382,36 @@ bool ExportSignaturesDb(const std::string& path, const Table& table, std::string
 // ---------------------------------------------------------------------------
 
 namespace {
-std::vector<std::string> ResultHeaders() {
-    std::vector<std::string> h;
-    for (const auto& d : algorithm::ResultColumnDefs()) h.push_back(d.second);
-    return h;
+// 单个结果列键 -> 显示值
+std::string ResultValueForKey(const MatchResult& m, const std::string& key) {
+    if (key == "pattern_name") return m.patternName;
+    if (key == "process_name") return data::WideToUtf8(m.processName);
+    if (key == "pid") return std::to_string(m.pid);
+    if (key == "address") {
+        std::ostringstream o;
+        o << "0x" << std::hex << std::uppercase << m.address;
+        return o.str();
+    }
+    if (key == "address_dec") return std::to_string(m.address);
+    if (key == "module_name") return data::WideToUtf8(m.moduleName);
+    if (key == "module_base") {
+        std::ostringstream o;
+        o << "0x" << std::hex << std::uppercase << m.moduleBase;
+        return o.str();
+    }
+    if (key == "matched_bytes") return m.matchedBytes;
+    if (key == "hit_time") return m.hitTime;
+    if (key == "custom") return m.custom;
+    return std::string();
 }
 
-// 一行结果的 9 个值，顺序与 ResultColumnDefs() 一致
+// 一行结果的所有值，顺序与 ResultColumnDefs() 一致（含 address_dec）
 std::vector<std::string> ResultRowValues(const MatchResult& m) {
-    std::ostringstream addr, base;
-    addr << "0x" << std::hex << std::uppercase << m.address;
-    base << "0x" << std::hex << std::uppercase << m.moduleBase;
-    return {m.patternName, data::WideToUtf8(m.processName), std::to_string(m.pid),
-            addr.str(), data::WideToUtf8(m.moduleName), base.str(),
-            m.matchedBytes, m.hitTime, m.custom};
+    const auto defs = algorithm::ResultColumnDefs();
+    std::vector<std::string> vals;
+    vals.reserve(defs.size());
+    for (const auto& d : defs) vals.push_back(ResultValueForKey(m, d.first));
+    return vals;
 }
 
 bool IsNumericResultKey(const std::string& k) {
@@ -406,11 +422,23 @@ bool IsNumericResultKey(const std::string& k) {
 bool ExportResultsCsv(const std::string& path, const std::vector<MatchResult>& results,
                       std::string& err, const ResultExportOptions& options) {
     err.clear();
+    const auto defs = algorithm::ResultColumnDefs();
+    const std::vector<std::string> keys = algorithm::SelectResultKeys(options.columns);
+    std::vector<std::string> headers;
+    headers.reserve(keys.size());
+    for (size_t i = 0; i < keys.size(); ++i) {
+        std::string h;
+        if (!options.headers.empty() && i < options.headers.size()) h = options.headers[i];
+        else for (const auto& d : defs) if (d.first == keys[i]) { h = d.second; break; }
+        headers.push_back(h);
+    }
     std::vector<std::vector<std::string>> rows;
     rows.reserve(results.size());
-    for (const auto& m : results) rows.push_back(ResultRowValues(m));
-    std::vector<std::string> headers = ResultHeaders();
-    algorithm::FilterResultColumns(options.columns, headers, rows);
+    for (const auto& m : results) {
+        std::vector<std::string> row; row.reserve(keys.size());
+        for (const auto& k : keys) row.push_back(ResultValueForKey(m, k));
+        rows.push_back(std::move(row));
+    }
     std::string text = algorithm::Utf8Bom() +
                        algorithm::EncodeTemplateRecord(options.templateText) +
                        algorithm::SerializeCsv(headers, rows);
@@ -475,11 +503,23 @@ bool ExportResultsDb(const std::string& path, const std::vector<MatchResult>& re
 bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& results,
                       std::string& err, const ResultExportOptions& options) {
     err.clear();
+    const auto defs = algorithm::ResultColumnDefs();
+    const std::vector<std::string> keys = algorithm::SelectResultKeys(options.columns);
+    std::vector<std::string> headers;
+    headers.reserve(keys.size());
+    for (size_t i = 0; i < keys.size(); ++i) {
+        std::string h;
+        if (!options.headers.empty() && i < options.headers.size()) h = options.headers[i];
+        else for (const auto& d : defs) if (d.first == keys[i]) { h = d.second; break; }
+        headers.push_back(h);
+    }
     std::vector<std::vector<std::string>> rows;
     rows.reserve(results.size());
-    for (const auto& m : results) rows.push_back(ResultRowValues(m));
-    std::vector<std::string> headers = ResultHeaders();
-    algorithm::FilterResultColumns(options.columns, headers, rows);
+    for (const auto& m : results) {
+        std::vector<std::string> row; row.reserve(keys.size());
+        for (const auto& k : keys) row.push_back(ResultValueForKey(m, k));
+        rows.push_back(std::move(row));
+    }
 
     std::ostringstream out;
     if (!options.templateText.empty()) {

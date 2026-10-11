@@ -295,7 +295,7 @@ TEST(Integration, ExportResultsOptionsAndCustom) {
     EXPECT_NE(csvText.find("#psig-template"), std::string::npos);
     EXPECT_NE(csvText.find("我的自定义值"), std::string::npos);
     EXPECT_NE(csvText.find("PID"), std::string::npos);
-    EXPECT_NE(csvText.find("自定义"), std::string::npos);
+    EXPECT_NE(csvText.find("备注"), std::string::npos);
     EXPECT_EQ(csvText.find("特征码名"), std::string::npos); // 未选列不导出
 
     const std::string txtText = ReadAll(txt);
@@ -350,6 +350,78 @@ TEST(Integration, CsvBomRoundTripHeaderClean) {
     EXPECT_EQ(back.columns[0].title, "名称");
     ASSERT_EQ(back.rows.size(), 1u);
     EXPECT_EQ(back.rows[0].cells[0], "p1");
+    DeleteFileA(path.c_str());
+}
+
+// R-01：结果导出支持十进制地址列（address_dec）
+TEST(Integration, ExportResultsDecimalAddress) {
+    std::vector<psig::MatchResult> results;
+    psig::MatchResult m;
+    m.patternName = "p1";
+    m.pid = 100;
+    m.address = 0x140001234; // 十进制 5368721972
+    results.push_back(m);
+
+    // 默认全列不含 address_dec
+    psig::ResultExportOptions def;
+    std::string err;
+    std::string csvDef = TempPath("psig_dec_def.csv");
+    ASSERT_TRUE(psig::ExportResultsCsv(csvDef, results, err, def)) << err;
+    std::string defText = ReadAll(csvDef);
+    EXPECT_EQ(defText.find("地址(十进制)"), std::string::npos); // 默认不含
+    DeleteFileA(csvDef.c_str());
+
+    // 显式选择 address_dec → 十进制值与表头
+    psig::ResultExportOptions opt;
+    opt.columns = {"pid", "address_dec"};
+    std::string csv = TempPath("psig_dec.csv");
+    ASSERT_TRUE(psig::ExportResultsCsv(csv, results, err, opt)) << err;
+    std::string text = ReadAll(csv);
+    EXPECT_NE(text.find("地址(十进制)"), std::string::npos);
+    EXPECT_NE(text.find(std::to_string(m.address)), std::string::npos); // 十进制值
+    EXPECT_EQ(text.find("0x"), std::string::npos); // 不含十六进制
+    DeleteFileA(csv.c_str());
+}
+
+// R-02：结果导出表头可随调用方语言（options.headers 优先）
+TEST(Integration, ExportResultsHeadersOverride) {
+    std::vector<psig::MatchResult> results;
+    psig::MatchResult m;
+    m.patternName = "p1";
+    m.pid = 200;
+    results.push_back(m);
+
+    psig::ResultExportOptions opt;
+    opt.columns = {"pid", "process_name", "address"};
+    opt.headers = {"PID", "Process", "Address"};
+    std::string err;
+    std::string csv = TempPath("psig_hdr.csv");
+    ASSERT_TRUE(psig::ExportResultsCsv(csv, results, err, opt)) << err;
+    std::string text = ReadAll(csv);
+    EXPECT_NE(text.find("PID"), std::string::npos);
+    EXPECT_NE(text.find("Process"), std::string::npos);
+    EXPECT_EQ(text.find("特征码名"), std::string::npos); // 未用中文默认
+    DeleteFileA(csv.c_str());
+}
+
+// R-04：特征码导入支持英文标题回映射（跨语言往返）
+TEST(Integration, SignatureImportEnglishTitles) {
+    psig::Table t;
+    t.columns = {
+        {"name", "Name", "text", true},
+        {"pattern", "Signature", "text", true},
+        {"note", "Remarks", "text", true},
+    };
+    t.rows = {{{"p1", "AA BB", "n1"}}};
+    std::string err;
+    std::string path = TempPath("psig_sig_en.csv");
+    ASSERT_TRUE(psig::ExportSignaturesCsv(path, t, err)) << err;
+    psig::Table back = psig::ImportSignaturesCsv(path, err);
+    ASSERT_EQ(back.rows.size(), 1u) << err;
+    ASSERT_EQ(back.columns.size(), 3u);
+    EXPECT_EQ(back.columns[0].key, "name");
+    EXPECT_EQ(back.columns[1].key, "pattern");
+    EXPECT_EQ(back.columns[2].key, "note");
     DeleteFileA(path.c_str());
 }
 

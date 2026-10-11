@@ -1,5 +1,5 @@
 // psig.h - 公共 API（进程特征码批量匹配静态库）
-// 版本 v0.2.1
+// 版本 v0.2.2
 // 说明：本头文件是 psig 静态库唯一对外契约；GUI 只能经此公共 API 调用静态库能力。
 // 约束：静态库不依赖 Qt；所有公共 API 不抛异常，用返回值/出参表达错误；线程安全。
 #pragma once
@@ -82,7 +82,8 @@ struct Table {
 // 匹配结果导出选项
 struct ResultExportOptions {
     std::string templateText;            // 表首模板文本（可空；TXT 置于最前 / CSV 前置记录 / DB 元数据）
-    std::vector<std::string> columns;    // 要导出的结果列键（空=全部）。键见 psig 结果列：pattern_name/process_name/pid/address/module_name/module_base/matched_bytes/hit_time/custom
+    std::vector<std::string> columns;    // 要导出的结果列键（空=全部，不含 address_dec）。键见 psig 结果列：pattern_name/process_name/pid/address/module_name/module_base/matched_bytes/hit_time/custom/address_dec
+    std::vector<std::string> headers;    // 与 columns 一一对应的表头文字（可空）；非空时优先于默认中文表头（用于跟随界面语言）。长度需与 columns 一致
 };
 
 // 扫描进度
