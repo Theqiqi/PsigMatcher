@@ -1,30 +1,33 @@
-# 14 API 能力需求分析（v0.2.1，增量）
+# 14 API 能力需求分析（v0.2.2，增量）
 
-> 前置：`11_GUI执行路径.md`、`psig` 公共头文件 `psig/include/psig.h`、`design/v0.2.0/gproto/77_静态库完成契约.md`
-> 模式：修改/添加功能 → 聚焦改动点**新增**的能力需求；已有 API 可覆盖的直接调用。
+- 模式：修改型。聚焦 v0.2.2 改动点新增/变更的静态库能力需求。
+- 既有静态库：`psig`（v0.2.1），公开 API 见 `psig/include/psig.h`。
 
-## 1. 改动点 → 能力需求
+## 能力需求清单
 
-| 能力编号 | 关联改动点 | 能力需求 | 期望公共 API | 输入 | 输出 | 异常要求 | 验收标准 |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| CAP-1 | C-03 | 特征码表 CSV 导出**写 UTF-8 BOM**；导入**兼容带/不带 BOM** | `ExportSignaturesCsv` / `ImportSignaturesCsv` | 文件路径 + `Table` | 成功/失败；文件首部含 BOM | 无 BOM 旧文件仍可导入；不可读写置 err | 导出文件首 3 字节 = `EF BB BF`；往返一致 |
-| CAP-2 | C-03 | 结果 CSV 导出**写 UTF-8 BOM** | `ExportResultsCsv` | 文件路径 + 结果 + 选项 | 成功/失败；文件首部含 BOM | 同上 | Excel 打开中文表头不乱码；往返一致 |
-| CAP-3 | C-12 | **提取指定进程图标**（ARGB 位图） | 新 API `ProcessIcon(pid, …)` | pid | 宽/高 + ARGB 像素字节（可空） | 进程无图标/取失败 → 返回空（GUI 用系统默认）；不抛异常 | 有图标的进程返回非空位图且尺寸>0 |
-| CAP-4 | C-12 | **系统默认进程图标** | 新 API `DefaultProcessIcon(…)` 或 `ProcessIcon` 对空值返回默认 | 无 | 宽/高 + ARGB 字节 | 始终可返回（内置/系统默认） | 无图标进程显示默认图标而非空白 |
-| CAP-5 | C-01/C-04/C-05 | 对话框按钮生效 | 无需静态库 | — | — | — | GUI 层实现 |
-| CAP-6 | C-02 | 界面语言切换 | 无需静态库 | — | — | — | GUI 层实现 |
-| CAP-7 | C-06/C-08/C-09/C-10/C-11/C-07/C-13/C-14 | 纯 GUI 交互/构建/表现 | 无需静态库 | — | — | — | GUI 层实现 |
+### R-01 结果导出支持十进制地址列（C-01）
+- 期望公共 API：`psig::algorithm::ResultColumnDefs()` 增加键 `address_dec`；`psig::ResultRowValues(const MatchResult&, const std::string& key)` 对 `address_dec` 返回 `std::to_string(r.address)`（十进制）。
+- 输入/输出：键字符串 → 十进制地址字符串。
+- 异常要求：键不存在行为不变。
+- 验收：调用方在 `ResultExportOptions.columns` 含 `address_dec` 时，导出该列为十进制。
 
-## 2. 现有 API 覆盖情况
+### R-02 结果导出表头可由调用方指定语言（C-05）
+- 期望公共 API：`psig::ResultExportOptions` 新增字段 `std::vector<std::string> headers;`（与 `columns` 一一对应，可空）。
+- `ExportResultsCsv/Db/Txt`：若 `headers` 非空且与 `columns` 等长，则使用 `headers[i]` 作为第 i 列表头；否则回落 `ResultColumnDefs()` 默认中文。
+- 输入/输出：调用方传翻译后表头 → 文件表头为对应语言。
+- 验收：英文 UI 传英文表头 → 导出文件表头英文；不传 → 中文（向后兼容）。
 
-| 能力 | 现有 API | 是否覆盖 |
-| --- | --- | --- |
-| CAP-1/CAP-2 | `Import/ExportSignaturesCsv`、`ExportResultsCsv`（`SerializeCsv` 无 BOM） | **否**（需扩展：写 BOM + 导入剥离） |
-| CAP-3/CAP-4 | `ProcessInfo`（仅 pid/name/path/accessible，无图标） | **否**（需新增图标 API） |
-| CAP-5/CAP-6/CAP-7 | — | 不需要静态库 |
+### R-03 结果默认表头「自定义」改名「备注」（C-01）
+- `ResultColumnDefs()` 中 `{"custom","自定义"}` 改为 `{"custom","备注"}`。键 `custom` 不变（导入映射不受影响）。
 
-## 3. 约束满足说明
+### R-04 特征码导入支持英文标题回映射（C-06）
+- `psig::BuiltinKeyFromTitle(const std::string& title)`：在既有中文映射（名称/特征码/备注 → name/pattern/note）基础上，新增英文映射（Name/Signature/Remarks/Note → 对应 key），保证英文 UI 导出的特征码 CSV 可被中文 UI 正确导入（跨语言往返）。
+- 验收：`BuiltinKeyFromTitle("Name")=="name"` 等。
 
-- 逐条列出改动点所需能力、期望公共 API、输入输出、异常要求、验收标准。
-- 已有 API 能覆盖的（枚举/解析/扫描/基础导入导出）→ 直接调用；不足的（CAP-1..CAP-4）→ 记入缺失能力，走静态库流程（步骤 17-20）。
-- 匹配对象仅为静态库公共 API；**GUI 不得用 OS API 充当能力提供方**（图标必须由 psig 提供），不得自行实现缺失能力或编造数据。
+## 能力覆盖判定
+- 上述能力均为**既有 API 的增强/字段扩展**，静态库 `psig` 已存在，无需新建库，但需走「静态库跨流程需求接收」（步骤 16-21，见 gproto/）补充实现。
+- GUI 不直接实现缺失功能、不调用平台 API；全部经由扩展后的 `psig` 公共 API。
+
+## 备注
+- 类型词汇（`text`/`int`/`enum`）与内置键（`name`/`pattern`/`note`）已由 `psig::BuiltinSignatureColumns()`/`ColumnDef` 暴露，GUI 直接复用，无需新增 API（C-02）。
+- 进程名称兜底（C-03）、权限图标（C-09）为 GUI 侧展示逻辑，不涉及静态库 API 变更。
