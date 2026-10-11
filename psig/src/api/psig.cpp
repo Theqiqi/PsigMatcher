@@ -543,4 +543,12 @@ bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& r
     return true;
 }
 
+std::vector<std::pair<std::string, std::string>> ResultColumnDefs() {
+    return algorithm::ResultColumnDefs();
+}
+
+std::vector<std::string> SelectResultKeys(const std::vector<std::string>& requested) {
+    return algorithm::SelectResultKeys(requested);
+}
+
 } // namespace psig

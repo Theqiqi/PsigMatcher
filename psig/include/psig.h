@@ -156,4 +156,15 @@ bool ExportResultsDb(const std::string& path, const std::vector<MatchResult>& re
 bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& results,
                       std::string& err, const ResultExportOptions& options = {});
 
+// ---------------------------------------------------------------------------
+// 结果列查询 API（供界面按当前语言构造导出表头）
+// ---------------------------------------------------------------------------
+
+// 结果列定义：(键, 默认中文标题)，顺序即导出顺序
+std::vector<std::pair<std::string, std::string>> ResultColumnDefs();
+
+// 解析实际导出的结果列键：requested 为空/全未知 → 默认集合（不含 address_dec）；
+// 未知键被忽略；返回顺序与 requested 一致（address_dec 需显式请求）
+std::vector<std::string> SelectResultKeys(const std::vector<std::string>& requested);
+
 } // namespace psig
