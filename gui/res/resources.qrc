@@ -2,6 +2,13 @@
 <RCC version="1.0">
     <qresource prefix="/">
         <file>style.qss</file>
-        <file>app.png</file>
+        <!-- 多尺寸程序图标：由 gui/script/gen_app_icon.py 生成，main.cpp 逐个 QIcon::addFile -->
+        <file>app_16.png</file>
+        <file>app_24.png</file>
+        <file>app_32.png</file>
+        <file>app_48.png</file>
+        <file>app_64.png</file>
+        <file>app_128.png</file>
+        <file>app_256.png</file>
     </qresource>
 </RCC>

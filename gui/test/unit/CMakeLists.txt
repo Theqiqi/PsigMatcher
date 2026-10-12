@@ -8,7 +8,9 @@ set(GUI_TEST_INCLUDES
 )
 
 # View 层可单独编译测试（仅 View + Model，不链接 ViewModel/静态库）
-add_executable(psig_test_view test_view.cpp ${GUI_VIEW_SOURCES} ${GUI_MODEL_SOURCES})
+# 嵌入 resources.qrc：图标用例需断言 :/app_<N>.png 资源真实存在且可解码
+add_executable(psig_test_view test_view.cpp ${GUI_VIEW_SOURCES} ${GUI_MODEL_SOURCES}
+    ${CMAKE_SOURCE_DIR}/res/resources.qrc)
 target_include_directories(psig_test_view PRIVATE ${GUI_TEST_INCLUDES})
 target_link_libraries(psig_test_view PRIVATE Qt6::Widgets Qt6::Test GTest::gtest GTest::gtest_main)
 if(PSIG_QT_STATIC)

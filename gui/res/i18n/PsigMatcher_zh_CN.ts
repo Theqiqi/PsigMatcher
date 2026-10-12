@@ -109,8 +109,8 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="74"/>
-        <source>进程特征码批量匹配器 v0.3.2 已就绪</source>
-        <translation>进程特征码批量匹配器 v0.3.2 已就绪</translation>
+        <source>进程特征码批量匹配器 v0.3.3 已就绪</source>
+        <translation>进程特征码批量匹配器 v0.3.3 已就绪</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="91"/>
@@ -428,11 +428,11 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/result.cpp" line="138"/>
-        <source>进程特征码批量匹配器 v0.3.2
+        <source>进程特征码批量匹配器 v0.3.3
 基于 psig 静态库（进程特征码批量匹配）
 构建配置：%1
 Qt 版本：%2</source>
-        <translation>进程特征码批量匹配器 v0.3.2
+        <translation>进程特征码批量匹配器 v0.3.3
 基于 psig 静态库（进程特征码批量匹配）
 构建配置：%1
 Qt 版本：%2</translation>
@@ -667,8 +667,8 @@ Qt 版本：%2</translation>
     </message>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="286"/>
-        <source>进程特征码批量匹配器 v0.3.2</source>
-        <translation>进程特征码批量匹配器 v0.3.2</translation>
+        <source>进程特征码批量匹配器 v0.3.3</source>
+        <translation>进程特征码批量匹配器 v0.3.3</translation>
     </message>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="312"/>
