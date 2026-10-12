@@ -71,7 +71,7 @@ void MainViewModel::install(MainWindow* view) {
     m_view->showProcessPage();
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("就绪，请选择目标进程"));
-    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.3.2 已就绪"));
+    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.3.3 已就绪"));
 
     onRefreshProcesses(); // C-09：启动后自动枚举一次进程
 }

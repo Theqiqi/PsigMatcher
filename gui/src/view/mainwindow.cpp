@@ -283,7 +283,7 @@ void MainWindow::setLanguageChecked(const QString& code) {
 }
 
 void MainWindow::retranslateUi() {
-    setWindowTitle(tr("进程特征码批量匹配器 v0.3.2"));
+    setWindowTitle(tr("进程特征码批量匹配器 v0.3.3"));
 
     m_fileMenu->setTitle(tr("文件(&F)"));
     m_editMenu->setTitle(tr("编辑(&E)"));
