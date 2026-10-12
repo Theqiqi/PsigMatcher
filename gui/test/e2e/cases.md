@@ -1,7 +1,7 @@
 # PsigMatcher E2E 测试用例清单
 
-- 版本：v0.3.2
-- 前置：`design/v0.3.2/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
+- 版本：v0.3.3
+- 前置：`design/v0.3.3/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
 - 产物对应：`drive.ps1`（驱动）、`analyze.py`（断言）、`verify_all.sh`（编排）
 - 说明：每个用例的操作步骤均对应真实可执行入口（菜单/工具栏/快捷键）；驱动脚本按步骤注入，断言脚本按预期断言，脚本与用例一一对应。
 
@@ -11,6 +11,13 @@
 - 注入：`keybd_event`（Win32 原始输入）注入快捷键；`PostMessage(WM_CLOSE)` 关闭窗口。
 - 截图：客户区（排除标题栏），保存至 `gui/out/verify/shot_xx.png`。
 - 快捷键入口：Ctrl+1/2/3 切页（视图菜单）、Ctrl+N 新增行、Ctrl+R 刷新进程、F5 扫描、Ctrl+M 列管理、Ctrl+O/Ctrl+S 导入/导出、F1 关于；**模态对话框按钮**：Ctrl+S 保存、Ctrl+D 不保存、Esc 取消（见 `design/v0.3.2/gui/05_GUI功能列表与窗口定义.md`）。
+
+## v0.3.3 变更点（相对 v0.3.2）
+
+- C-01：程序外壳图标资源——新增 E2E-09（源侧图标一致性：生成物↔脚本↔`.qrc`↔`main.cpp`）与 E2E-10（产物侧：exe 的 PE 资源节含 7 尺寸图标，且 Windows 外壳关联图标与 `app_32.png` 逐像素一致）。二者**非像素断言**，由 `script/verify/` 下的脚本承担，追加在 `verify_all.sh` 的像素断言之后。
+- C-02/C-03：仓库文档（README 双语）——不经程序，不纳入 E2E；由文档结构对照与链接目标存在性校验覆盖（见 `design/v0.3.3/gui/34_E2E测试结果.md`）。
+- 窗口标题版本号更新为 v0.3.3（E2E-01 预期结果同步更新）。
+- 既有 8 个像素断言用例（E2E-01–E2E-08）逐条回归通过，无改动。
 
 ## v0.3.2 变更点（相对 v0.3.1）
 
@@ -84,7 +91,7 @@
   1. 启动 `PsigMatcher.exe`。
   2. 等待主窗口句柄就绪并置前。
   3. 截取客户区 → `shot_01_start.png`。
-- 预期结果：窗口标题为「进程特征码批量匹配器 v0.3.2」；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。
+- 预期结果：窗口标题为「进程特征码批量匹配器 v0.3.3」（英文界面为 `Process Signature Batch Matcher v0.3.3`）；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。
 
 ## E2E-02 进程表被填充（C-09 启动自动枚举 / Ctrl+R）
 
@@ -149,6 +156,23 @@
   1. 注入 Ctrl+D（提示按钮「不保存」的确定性键盘入口）。
   2. 等待进程退出（≤ 8s）。
 - 预期结果：进程正常退出，退出码为 `0`（写入 `out/verify/exit_code.txt`）。
+
+## E2E-09 图标资源源侧一致性（C-01，非像素断言）
+
+- 场景：校验「图标生成物 ↔ 生成脚本 ↔ `.qrc` ↔ `main.cpp`」四处一致，防尺寸集合漂移。
+- 前置：已运行 `python3 gui/script/gen_app_icon.py`（生成物已在仓库中）。
+- 操作步骤：
+  1. 执行 `python3 gui/script/verify/check_app_icon.py`。
+- 预期结果（全部满足才 PASS）：7 个 `app_<N>.png` 与 `app.ico` 存在；`gen_app_icon.py --check` 逐字节一致；`app.ico` 帧尺寸集合 = {16,24,32,48,64,128,256}；每帧与对应 PNG 逐像素一致；`.qrc` 与 `main.cpp` 的尺寸集合与脚本一致。
+
+## E2E-10 exe 图标资源与外壳关联（C-01，非像素断言）
+
+- 场景：校验编译产物真的携带图标：PE 资源节内容 + Windows 外壳关联图标。
+- 前置：E2E-01 的产物 `out/bin/<配置>/PsigMatcher.exe` 存在。
+- 操作步骤：
+  1. `powershell -File gui/script/verify/extract_exe_icon.ps1 -Exe <exe> -OutDir gui/out/verify`（走 `ExtractAssociatedIcon`，即资源管理器显示文件图标的同一套逻辑）→ `out/verify/exe_associated_icon.png`。
+  2. `python3 gui/script/verify/check_exe_icon.py <exe> --shell-icon out/verify/exe_associated_icon.png`。
+- 预期结果（全部满足才 PASS）：PE 资源目录存在；有 `RT_GROUP_ICON(14)` 与 7 个 `RT_ICON(3)`；组图标声明的尺寸集合 = 7 尺寸；每个 `RT_ICON` 载荷与 `res/app.ico` 对应帧逐字节一致；外壳关联图标为 32×32 且与 `res/app_32.png` 差异像素为 0。
 
 ---
 
