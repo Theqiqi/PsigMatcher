@@ -38,4 +38,16 @@
 
 ## 交付结果（流程完成）
 
-- 待补充（见各阶段文档与最终提交）。
+- **代码**：
+  - GUI View：新增 `gui/src/view/hoverrowtableview.{h,cpp}`（整行悬停视图，跟踪悬停行并重绘受影响的行）；重写 `hoverrowdelegate.{h,cpp}`（改 `initStyleOption`，仅在自身单元格内设悬停底色，消除越界绘制）；`processselectionpage.cpp` 换用 `HoverRowTableView` 并 `setCornerButtonEnabled(false)`；`signatureeditorpage.cpp`/`resultpage.cpp` 换用 `HoverRowTableView`。
+  - GUI ViewModel：`signature.cpp` 导出写 `targetProcess`、导入不一致弹窗（`confirmTargetProcessMismatch`，可继续）；`mainviewmodel.h` 增声明。
+  - psig：`psig.h` 的 `Table` 新增 `targetProcess` 字段；`exchange_signatures.cpp` 以 `sig_meta('target_process')` 读写（空值不写、缺键不报错）。
+  - 版本号：psig.h 及 GUI 标题/启动日志/关于框更新为 **v0.3.1**。
+- **文档**：`design/v0.3.1/gui/` 01–34（含 29–33 层审查矩阵、34 E2E 结果）；`design/v0.3.1/gproto/` 02–40 + 77（静态库侧）。
+- **测试**：
+  - psig 单元：`test_signatures_exchange.cpp` 新增 4 例（`.db` 往返携带目标进程、空值语义、缺文件报错、CSV 往返不变）→ **psig_unit 通过**。
+  - GUI 单元：`View.ProcessPageCornerButtonDisabled`、`View.HoverRowHighlightsWholeRowWithinCells`（像素采样）、`ViewModel.ImportTargetProcessMismatchPrompts` → **psig_test_view / psig_test_viewmodel 通过**。
+  - Release 构建：psig **2/2**、GUI **5/5** 全绿。
+  - E2E：`verify_all.sh Release` **7/7 通过**；标题 `Process Signature Batch Matcher v0.3.1`；PE 子系统 `WINDOWS`（无控制台）。
+- **提交与标签**：每步一次英文提交；最终打 annotated tag `v0.3.1`。
+
