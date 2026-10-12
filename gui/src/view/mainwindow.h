@@ -136,4 +136,5 @@ private:
     QPlainTextEdit* m_logEdit = nullptr;
 
     bool m_processSelectionLocked = false;
+    bool m_transientError = false;   // C-04：瞬时标签当前错误态（避免每次刷新重设样式表）
 };

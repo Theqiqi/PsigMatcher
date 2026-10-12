@@ -109,8 +109,8 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="153" />
-        <source>进程特征码批量匹配器 v0.2.4 已就绪</source>
-        <translation>Process Signature Batch Matcher v0.2.4 is ready</translation>
+        <source>进程特征码批量匹配器 v0.3.0 已就绪</source>
+        <translation>Process Signature Batch Matcher v0.3.0 is ready</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="275" />
@@ -480,11 +480,11 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="761" />
-        <source>进程特征码批量匹配器 v0.2.4
+        <source>进程特征码批量匹配器 v0.3.0
 基于 psig 静态库（进程特征码批量匹配）
 构建配置：%1
 Qt 版本：%2</source>
-        <translation>Process Signature Batch Matcher v0.2.4
+        <translation>Process Signature Batch Matcher v0.3.0
 Based on the psig static library (batch process signature matching)
 Build config: %1
 Qt version: %2</translation>
@@ -514,8 +514,8 @@ Qt version: %2</translation>
     <name>MainWindow</name>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="249" />
-        <source>进程特征码批量匹配器 v0.2.4</source>
-        <translation>Process Signature Batch Matcher v0.2.4</translation>
+        <source>进程特征码批量匹配器 v0.3.0</source>
+        <translation>Process Signature Batch Matcher v0.3.0</translation>
     </message>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="251" />

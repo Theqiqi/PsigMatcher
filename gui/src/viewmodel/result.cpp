@@ -135,7 +135,7 @@ void MainViewModel::onAbout() {
 #endif
     AboutDialog dlg(m_view);
     vmhelp::wireDialog(&dlg, dlg.buttonBox());
-    dlg.setInfo(tr("进程特征码批量匹配器 v0.2.4\n"
+    dlg.setInfo(tr("进程特征码批量匹配器 v0.3.0\n"
                    "基于 psig 静态库（进程特征码批量匹配）\n"
                    "构建配置：%1\nQt 版本：%2")
                     .arg(cfg, QString::fromLatin1(qVersion())));

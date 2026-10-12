@@ -10,6 +10,7 @@
 
 #include <QMenu>
 #include <QPlainTextEdit>
+#include <QTimer>
 
 #include "view/mainwindow.h"
 #include "view/processselectionpage.h"
@@ -43,6 +44,12 @@ void MainViewModel::install(MainWindow* view) {
     connect(m_procWatcher, &QFutureWatcherBase::finished, this, &MainViewModel::onProcessesEnumerated);
     connect(m_scanWatcher, &QFutureWatcherBase::finished, this, &MainViewModel::onScanFinished);
 
+    // C-03：扫描进度定时采样（工作线程写原子变量，主线程定时读取刷新界面）
+    m_progressTimer = new QTimer(this);
+    m_progressTimer->setInterval(150);
+    m_progressTimer->setTimerType(Qt::CoarseTimer);
+    connect(m_progressTimer, &QTimer::timeout, this, &MainViewModel::onProgressTick);
+
     bindSignaturePage();
     bindProcessPage();
     bindResultPage();
@@ -60,7 +67,7 @@ void MainViewModel::install(MainWindow* view) {
     m_view->showProcessPage();
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("就绪，请选择目标进程"));
-    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.2.4 已就绪"));
+    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.3.0 已就绪"));
 
     onRefreshProcesses(); // C-09：启动后自动枚举一次进程
 }

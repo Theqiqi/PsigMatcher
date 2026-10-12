@@ -233,7 +233,11 @@ void MainWindow::setProcessSelectionLocked(bool locked) {
 void MainWindow::setPersistentStatus(const QString& text) { m_persistentLabel->setText(text); }
 
 void MainWindow::setTransientMessage(const QString& text, bool error) {
-    m_transientLabel->setStyleSheet(error ? QStringLiteral("color:#c62828;") : QString());
+    // C-04：仅在错误态变化时重设样式表，避免每次刷新都调用 setStyleSheet
+    if (error != m_transientError) {
+        m_transientError = error;
+        m_transientLabel->setStyleSheet(error ? QStringLiteral("color:#c62828;") : QString());
+    }
     m_transientLabel->setText(text);
 }
 
@@ -279,7 +283,7 @@ void MainWindow::setLanguageChecked(const QString& code) {
 }
 
 void MainWindow::retranslateUi() {
-    setWindowTitle(tr("进程特征码批量匹配器 v0.2.4"));
+    setWindowTitle(tr("进程特征码批量匹配器 v0.3.0"));
 
     m_fileMenu->setTitle(tr("文件(&F)"));
     m_editMenu->setTitle(tr("编辑(&E)"));

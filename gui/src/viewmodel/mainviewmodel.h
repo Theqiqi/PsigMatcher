@@ -22,6 +22,7 @@ class QAction;
 class QTranslator;
 class QPoint;
 class QModelIndex;
+class QTimer;
 
 class MainViewModel : public QObject {
     Q_OBJECT
@@ -58,6 +59,7 @@ private slots:
     void onStartScan();
     void onCancelScan();
     void onScanFinished();
+    void onProgressTick();                         // C-03：定时采样扫描进度刷新界面
     void onExportResultsCsv();
     void onExportResultsTxt();
     void onClearResults();
@@ -107,6 +109,13 @@ private:
     QFutureWatcher<std::vector<psig::MatchResult>>* m_scanWatcher = nullptr;
     std::atomic_bool m_cancel{false};          // 扫描取消标志（资源句柄）
     std::shared_ptr<std::atomic_bool> m_alive; // 图标后台任务存活标志
+
+    // C-03/C-04：扫描进度定时采样——工作线程只写原子变量，主线程定时读取刷新
+    QTimer* m_progressTimer = nullptr;
+    std::atomic<size_t> m_progDone{0};         // 已完成区域数
+    std::atomic<size_t> m_progTotal{0};        // 总区域数
+    std::atomic<size_t> m_progHits{0};         // 命中累计
+    std::atomic<uint32_t> m_progPid{0};        // 当前 pid
 
     QString m_templateText;                    // 表级模板文本（文档级）
     QStringList m_exportColumns;               // 选中导出列键（空 = 全部）
