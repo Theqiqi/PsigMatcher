@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 project(PsigMatcher LANGUAGES CXX)
 
+# 图标资源（PE 资源节）需要 MSVC 资源编译器 rc.exe，故启用 RC 语言；
+# 非 MSVC 工具链在上方 FATAL_ERROR 处已拦截。
+enable_language(RC)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -74,6 +78,14 @@ set(GUI_VM_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/result.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel/language.cpp
 )
+
+# 生产 exe 的图标资源：res/app.rc 引用同目录的 app.ico（由 gen_app_icon.py 生成）。
+# INCLUDE_DIRECTORIES 让 rc.exe 能按 "app.ico" 解析到 res/ 目录（不依赖构建时的当前目录）。
+set(GUI_ICON_RESOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/app.rc
+)
+set_source_files_properties(${GUI_ICON_RESOURCES}
+    PROPERTIES INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/res)
 
 enable_testing()
 

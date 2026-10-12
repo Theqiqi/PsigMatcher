@@ -5,6 +5,7 @@ qt_add_executable(PsigMatcher
     ${GUI_MODEL_SOURCES}
     ${GUI_VM_SOURCES}
     ${CMAKE_SOURCE_DIR}/res/resources.qrc
+    ${GUI_ICON_RESOURCES}   # res/app.rc：exe 图标资源（rc.exe 编译后随目标嵌入）
 )
 
 target_include_directories(PsigMatcher PRIVATE
