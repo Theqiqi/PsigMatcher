@@ -17,19 +17,22 @@ bool IsReadableProtect(DWORD protect) {
 }
 } // namespace
 
-std::vector<uint32_t> EnumProcessIds() {
-    std::vector<uint32_t> pids;
+std::vector<data::ProcessEntry> EnumProcessEntries() {
+    std::vector<data::ProcessEntry> entries;
     HANDLE snap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (snap == INVALID_HANDLE_VALUE) return pids;
+    if (snap == INVALID_HANDLE_VALUE) return entries;
     PROCESSENTRY32W pe{};
     pe.dwSize = sizeof(pe);
     if (Process32FirstW(snap, &pe)) {
         do {
-            pids.push_back(pe.th32ProcessID);
+            data::ProcessEntry e;
+            e.pid = pe.th32ProcessID;
+            e.name = pe.szExeFile;
+            entries.push_back(std::move(e));
         } while (Process32NextW(snap, &pe));
     }
     CloseHandle(snap);
-    return pids;
+    return entries;
 }
 
 void* OpenForRead(uint32_t pid) {

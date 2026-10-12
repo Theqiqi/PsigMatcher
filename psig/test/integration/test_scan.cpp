@@ -85,6 +85,15 @@ TEST(Integration, EnumerateContainsSelf) {
     EXPECT_TRUE(found);
 }
 
+// R-01：进程名一律非空（含受保护进程；快照 szExeFile 提供）
+TEST(Integration, EnumerateNamesNonEmpty) {
+    auto procs = psig::EnumerateProcesses();
+    ASSERT_FALSE(procs.empty());
+    for (const auto& p : procs) {
+        EXPECT_FALSE(p.name.empty()) << "pid=" << p.pid;
+    }
+}
+
 // 扫描自身：应命中本进程内的已知特征
 TEST(Integration, ScanSelfFindsMarker) {
     psig::ScanRequest req;
@@ -402,6 +411,33 @@ TEST(Integration, ExportResultsHeadersOverride) {
     EXPECT_NE(text.find("Process"), std::string::npos);
     EXPECT_EQ(text.find("特征码名"), std::string::npos); // 未用中文默认
     DeleteFileA(csv.c_str());
+}
+
+// R-02：结果 TXT 摘要行可随调用方语言（options.summary 优先，空则默认中文）
+TEST(Integration, ExportResultsTxtSummaryOverride) {
+    std::vector<psig::MatchResult> results;
+    psig::MatchResult m;
+    m.patternName = "p1";
+    m.pid = 300;
+    results.push_back(m);
+
+    std::string err;
+    // 指定英文摘要
+    psig::ResultExportOptions opt;
+    opt.summary = "Results (1)";
+    std::string txtEn = TempPath("psig_sum_en.txt");
+    ASSERT_TRUE(psig::ExportResultsTxt(txtEn, results, err, opt)) << err;
+    const std::string en = ReadAll(txtEn);
+    EXPECT_NE(en.find("Results (1)"), std::string::npos);
+    EXPECT_EQ(en.find("匹配结果"), std::string::npos); // 不再写默认中文摘要
+    DeleteFileA(txtEn.c_str());
+
+    // 不指定 → 默认中文摘要（向后兼容）
+    std::string txtDef = TempPath("psig_sum_def.txt");
+    ASSERT_TRUE(psig::ExportResultsTxt(txtDef, results, err)) << err;
+    const std::string def = ReadAll(txtDef);
+    EXPECT_NE(def.find("匹配结果 (1 条)"), std::string::npos);
+    DeleteFileA(txtDef.c_str());
 }
 
 // R-04：特征码导入支持英文标题回映射（跨语言往返）

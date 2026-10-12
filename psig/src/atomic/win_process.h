@@ -9,8 +9,8 @@
 
 namespace psig::atomic {
 
-// 枚举系统进程 id
-std::vector<uint32_t> EnumProcessIds();
+// 枚举系统进程（pid + 名称；名称取自 Toolhelp 快照 szExeFile，无需打开进程）
+std::vector<data::ProcessEntry> EnumProcessEntries();
 
 // 以读权限打开进程；失败返回 nullptr
 void* OpenForRead(uint32_t pid);

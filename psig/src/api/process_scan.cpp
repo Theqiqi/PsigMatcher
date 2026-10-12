@@ -136,14 +136,15 @@ void ScanOneProcess(uint32_t pid, const std::vector<Pattern>& patterns, size_t m
 
 std::vector<ProcessInfo> EnumerateProcesses() {
     std::vector<ProcessInfo> result;
-    for (uint32_t pid : atomic::EnumProcessIds()) {
+    for (const data::ProcessEntry& entry : atomic::EnumProcessEntries()) {
         ProcessInfo info;
-        info.pid = pid;
-        std::wstring name, path;
-        atomic::ProcessNamePath(pid, name, path);
-        info.name = name;
+        info.pid = entry.pid;
+        std::wstring pathName, path;
+        atomic::ProcessNamePath(entry.pid, pathName, path);
+        // 名称优先取快照 szExeFile（受保护进程亦可得），映像名兜底
+        info.name = entry.name.empty() ? pathName : entry.name;
         info.path = path;
-        void* h = atomic::OpenForRead(pid);
+        void* h = atomic::OpenForRead(entry.pid);
         info.accessible = (h != nullptr);
         atomic::CloseProcessHandle(h);
         result.push_back(std::move(info));

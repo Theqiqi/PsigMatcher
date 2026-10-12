@@ -21,4 +21,10 @@ struct ModuleInfo {
     uint64_t size = 0;
 };
 
+// 进程快照条目（来自 Toolhelp PROCESSENTRY32W）
+struct ProcessEntry {
+    uint32_t pid = 0;
+    std::wstring name;  // szExeFile，无需打开进程即可得
+};
+
 } // namespace psig::data

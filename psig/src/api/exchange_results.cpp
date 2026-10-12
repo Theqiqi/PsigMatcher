@@ -176,7 +176,11 @@ bool ExportResultsTxt(const std::string& path, const std::vector<MatchResult>& r
         out << options.templateText << "\n";
         out << "========================================\n";
     }
-    out << "匹配结果 (" << rows.size() << " 条)\n";
+    if (!options.summary.empty()) {
+        out << options.summary << "\n";
+    } else {
+        out << "匹配结果 (" << rows.size() << " 条)\n";
+    }
     out << "========================================\n";
     for (size_t i = 0; i < rows.size(); ++i) {
         out << "[" << (i + 1) << "] ";
