@@ -1,0 +1,10 @@
+// app.rc -- 生产 exe（PsigMatcher.exe）的图标资源
+// 由 gui/CMakeLists.txt 启用 RC 语言后交给 MSVC rc.exe 编译，
+// 生成的 .res 随目标链接进 PE 资源节（RT_GROUP_ICON + RT_ICON）。
+//
+// 仅声明图标；不写 VERSIONINFO（版本号只由代码侧维护，见 design/v0.3.3/gui/28_QtGUI代码规范.md R-资源-4）。
+// 图标源：gui/res/app.ico，由 gui/script/gen_app_icon.py 生成（勿手工编辑）。
+
+#define IDI_APPICON 101
+
+IDI_APPICON ICON "app.ico"

@@ -53,6 +53,10 @@ ui_*.h
 # E2E artifacts (regenerated each run) —— gui/out/verify/ 已由上方 out/ 规则覆盖。
 # 不要写成裸 `verify/`：那会连带忽略源码目录 gui/script/verify/（验证脚本）。
 
+# Python 开发期工具（gui/script/*.py）的字节码缓存
+__pycache__/
+*.pyc
+
 # OS
 Thumbs.db
 .DS_Store
