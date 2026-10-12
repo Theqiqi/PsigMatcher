@@ -1,5 +1,5 @@
 // psig.h - 公共 API（进程特征码批量匹配静态库）
-// 版本 v0.3.0
+// 版本 v0.3.1
 // 说明：本头文件是 psig 静态库唯一对外契约；GUI 只能经此公共 API 调用静态库能力。
 // 约束：静态库不依赖 Qt；所有公共 API 不抛异常，用返回值/出参表达错误；线程安全。
 #pragma once
@@ -77,6 +77,7 @@ struct Table {
     std::vector<ColumnDef> columns;
     std::vector<TableRow> rows;
     std::string templateText;    // 表级模板文本（多行，可空；随导入/导出携带）
+    std::string targetProcess;   // 库级目标进程名（可空；随 .db 导出/导入携带，v0.3.1）
 };
 
 // 匹配结果导出选项

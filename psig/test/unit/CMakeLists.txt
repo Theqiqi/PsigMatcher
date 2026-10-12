@@ -7,6 +7,7 @@ add_executable(psig_unit
     test_codec.cpp
     test_win_encoding.cpp
     test_result_columns.cpp
+    test_signatures_exchange.cpp
 )
 
 target_include_directories(psig_unit PRIVATE ${CMAKE_SOURCE_DIR}/src)

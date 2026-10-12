@@ -107,6 +107,13 @@ Table ImportSignaturesDb(const std::string& path, std::string& err) {
             !meta.empty() && !meta[0].empty()) {
             table.templateText = meta[0][0];
         }
+        // v0.3.1：库级目标进程名（缺表/缺键 → 空串，不报错）
+        std::vector<std::vector<std::string>> tp;
+        std::string tpErr;
+        if (atomic::SqliteQuery(db, "SELECT value FROM sig_meta WHERE key='target_process';", tp, tpErr) &&
+            !tp.empty() && !tp[0].empty()) {
+            table.targetProcess = tp[0][0];
+        }
     }
     atomic::SqliteClose(db);
     return table;
@@ -145,6 +152,11 @@ bool ExportSignaturesDb(const std::string& path, const Table& table, std::string
     if (ok && !table.templateText.empty()) {
         ok = atomic::SqliteRun(db, "INSERT INTO sig_meta(key,value) VALUES('template',?);",
                                {table.templateText}, err);
+    }
+    // v0.3.1：库级目标进程名（非空才写，保持旧库语义）
+    if (ok && !table.targetProcess.empty()) {
+        ok = atomic::SqliteRun(db, "INSERT INTO sig_meta(key,value) VALUES('target_process',?);",
+                               {table.targetProcess}, err);
     }
     if (ok) {
         for (size_t i = 0; i < table.columns.size() && ok; ++i) {
