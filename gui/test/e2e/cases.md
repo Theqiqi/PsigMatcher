@@ -1,7 +1,7 @@
 # psig_gui E2E 测试用例清单
 
-- 版本：v0.3.0
-- 前置：`design/v0.3.0/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
+- 版本：v0.3.1
+- 前置：`design/v0.3.1/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
 - 产物对应：`drive.ps1`（驱动）、`analyze.py`（断言）、`verify_all.sh`（编排）
 - 说明：每个用例的操作步骤均对应真实可执行入口（菜单/工具栏/快捷键）；驱动脚本按步骤注入，断言脚本按预期断言，脚本与用例一一对应。
 
@@ -11,6 +11,16 @@
 - 注入：`keybd_event`（Win32 原始输入）注入快捷键；`PostMessage(WM_CLOSE)` 关闭窗口。
 - 截图：客户区（排除标题栏），保存至 `gui/out/verify/shot_xx.png`。
 - 快捷键入口：Ctrl+1/2/3 切页（视图菜单）、Ctrl+N 新增行、Ctrl+R 刷新进程、F5 扫描、Ctrl+M 列管理、Ctrl+O/Ctrl+S 导入/导出、F1 关于。
+
+## v0.3.1 变更点（相对 v0.3.0）
+
+- C-01：悬停高亮不再越界覆盖相邻列——委托（`HoverRowDelegate`）改为在 `initStyleOption` 内只对自身单元格设底色（不再扩展绘制矩形到整行宽）。
+- C-02：左键单击后，前导列（PID/Name 等）随整行同步变色，无需移动鼠标——由 `HoverRowTableView` 跟踪悬停行并在变化时重绘受影响的行。
+- C-03：悬停不再遮盖前导列字体——同一越界根因，随 C-01 一并修复。
+- C-04：进程表左上角空白（角落按钮）点击不再全选所有行——`setCornerButtonEnabled(false)`。
+- C-05：特征码 `.db` 记录目标进程名；导入时若与当前目标进程不一致则提示，用户可选「继续导入」或「取消」。
+- 窗口标题更新为「进程特征码批量匹配器 v0.3.1」（默认跟随系统语言 → 英文显示 `Process Signature Batch Matcher v0.3.1`）。
+- 未新增 E2E 用例；C-01/C-02/C-03（整行悬停高亮、不越界、不遮盖前导列）由 GUI 单元测试 `View.HoverRowHighlightsWholeRowWithinCells`（真实 QTableView + 委托 + 模型，像素采样断言整行高亮且限定在该行）覆盖；C-04 由 `View.ProcessPageCornerButtonDisabled` 覆盖；C-05 由 `ViewModel.ImportTargetProcessMismatchPrompts` + psig `test_signatures_exchange` 覆盖。
 
 ## v0.3.0 变更点（相对 v0.2.4）
 
@@ -66,7 +76,7 @@
   1. 启动 `psig_gui.exe`。
   2. 等待主窗口句柄就绪并置前。
   3. 截取客户区 → `shot_01_start.png`。
-- 预期结果：窗口标题为「进程特征码批量匹配器 v0.3.0」；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。
+- 预期结果：窗口标题为「进程特征码批量匹配器 v0.3.1」；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。
 
 ## E2E-02 进程表被填充（C-09 启动自动枚举 / Ctrl+R）
 
