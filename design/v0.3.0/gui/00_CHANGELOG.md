@@ -29,4 +29,12 @@
 
 ## 交付结果（流程完成）
 
-- 待流程完成后回填。
+- **psig 改动**：`src/api/process_scan.cpp`（`ScanProcesses` 重构为「规划 → 区域级并行 → 汇合」；进度真实化 `done`/`total`=区域工作量；回调按区域触发）；`include/psig.h`（`ScanProgress` 语义注释、`ProgressCallback` 并发契约、`ScanProcesses` 并行说明；版本 v0.3.0）；`test/integration/test_scan.cpp`（+3 用例）。
+- **GUI 改动**：`viewmodel/mainviewmodel.{h,cpp}`（`QTimer` + 进度原子变量 + `onProgressTick`）；`viewmodel/scan.cpp`（回调只写原子变量、定时采样、`onScanFinished` 停止定时器）；`view/mainwindow.{h,cpp}`（`setTransientMessage` 仅在错误态变化时重设样式表）；版本串 v0.3.0；i18n `.ts` 同步。
+- **构建/测试**：
+  - psig Debug/Release 编译通过；`psig_unit`（42 例）+ `psig_integration`（21 例）全绿（各 2/2 目标）。
+  - GUI Debug/Release 编译通过；`psig_test_{view,model,viewmodel,mvvm,userflow}` 全绿（各 5/5）。
+  - E2E：`verify_all.sh Release` 7/7 通过（截图证实版本号 v0.3.0）。
+- **审查**：View/Model/ViewModel/静态库调用/横切 5 张矩阵全部通过（无 ❌）；psig data/algorithm/atomic/api 4 层审查（前三层未受影响跳过，api 层通过）。
+- **tag**：`v0.3.0`（annotated，指向最终提交）。
+- **不做的事**：不新增窗口/页面、不改技术栈、不改变扫描语义（命中判定/结果字段/导出格式）、不新增区域权限过滤选项、不删除 psig 公共 API。
