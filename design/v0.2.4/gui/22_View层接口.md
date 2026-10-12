@@ -11,28 +11,19 @@ class HoverRowDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     explicit HoverRowDelegate(QObject* parent = nullptr);
+    static void attach(QTableView* view);   // setMouseTracking(true) + setItemDelegate(new HoverRowDelegate(view))
     void paint(QPainter* painter, const QStyleOptionViewItem& option,
                const QModelIndex& index) const override;
 };
 ```
 
-- `paint`：若 `option.state & QStyle::State_MouseOver` → 以悬停色（选中色 `#3a6ea5` 同色系更淡）填充**整行**背景（`option.rect` 扩展至整行宽度），再绘制单元格内容；否则调用基类 `paint`。
+- `paint`：若 `option.state & QStyle::State_MouseOver` → 以悬停色（选中色 `#3a6ea5` 同色系更淡）填充**整行**背景（`option.rect` 横向扩展至视口宽），再绘制单元格内容；否则调用基类 `paint`。
+- `attach(view)`：在表格上启用整行悬停（`setMouseTracking(true)` + `setItemDelegate`）。
 - 仅绘制，不发射信号、不改 Model。
 
 ## ProcessSelectionPage / SignatureEditorPage / ResultPage（增量）
 
-```cpp
-class ProcessSelectionPage : public QWidget {          // 同理 SignatureEditorPage / ResultPage
-    Q_OBJECT
-public:
-    QTableView* table() const;                          // 既有
-    // …
-    void installHoverRow();                             // 新增：table()->setMouseTracking(true); table()->setItemDelegate(new HoverRowDelegate(this));
-    void retranslateUi();
-};
-```
-
-- 三张表统一 `setMouseTracking(true)` + `setItemDelegate(new HoverRowDelegate(this))`（C-02）。
+- 三张表构造时调用 `HoverRowDelegate::attach(m_table)`（C-02）。
 - `selectionBehavior` 保持 `SelectRows`（选中整行语义不变）。
 
 ## SignatureEditorPage（增量）

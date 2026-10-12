@@ -34,7 +34,7 @@ public:
 ### 名称列（C-01）
 
 - `data(DisplayRole, 列=名称)`：直接返回 `r.name`（由 psig `EnumerateProcesses()` 提供的真实进程名，正常非空）。
-- **移除** v0.2.2 的「PID 0→系统空闲进程 / PID 4→系统 / 其他→未知进程」展示兜底；极端空名仅保留最小兜底（不作为正常路径），使列表不再出现「未知进程 / Unknown Process」。
+- **移除** v0.2.2 的「PID 0→系统空闲进程 / PID 4→系统 / 其他→未知进程」展示兜底，使列表不再出现「未知进程 / Unknown Process」。
 
 ## SignatureTableModel / ResultTableModel
 
