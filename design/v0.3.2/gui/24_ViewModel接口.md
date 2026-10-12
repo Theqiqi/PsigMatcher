@@ -64,8 +64,8 @@ bool MainViewModel::askSaveSignatureChanges(bool saveCancelAborts) {
     box.setWindowTitle(tr("保存特征码"));
     box.setText(tr("当前特征码表尚未保存，是否保存？"));
     QPushButton* saveBtn    = box.addButton(tr("保存"),   QMessageBox::AcceptRole);
-    QPushButton* cancelBtn  = box.addButton(tr("取消"),   QMessageBox::RejectRole);
     QPushButton* discardBtn = box.addButton(tr("不保存"), QMessageBox::DestructiveRole);
+    QPushButton* cancelBtn  = box.addButton(tr("取消"),   QMessageBox::RejectRole);
     saveBtn->setShortcut(QKeySequence(QStringLiteral("Ctrl+S")));     // 确定性键盘入口
     discardBtn->setShortcut(QKeySequence(QStringLiteral("Ctrl+D")));
     box.exec();
