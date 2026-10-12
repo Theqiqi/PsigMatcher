@@ -1,4 +1,4 @@
-/* style.qss - psig_gui 样式表（v0.2.1：统一白底 + 颜色点缀） */
+/* style.qss - PsigMatcher 样式表（v0.2.1：统一白底 + 颜色点缀） */
 
 QMainWindow, QDialog {
     background: #ffffff;

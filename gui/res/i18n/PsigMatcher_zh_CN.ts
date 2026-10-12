@@ -103,19 +103,19 @@
 <context>
     <name>MainViewModel</name>
     <message>
-        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="69"/>
+        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="73"/>
         <source>就绪，请选择目标进程</source>
         <translation>就绪，请选择目标进程</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="70"/>
-        <source>进程特征码批量匹配器 v0.3.1 已就绪</source>
-        <translation>进程特征码批量匹配器 v0.3.1 已就绪</translation>
+        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="74"/>
+        <source>进程特征码批量匹配器 v0.3.2 已就绪</source>
+        <translation>进程特征码批量匹配器 v0.3.2 已就绪</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="86"/>
-        <source>就绪 | 目标 %1 | 进程 %2 | 特征码 %3</source>
-        <translation>就绪 | 目标 %1 | 进程 %2 | 特征码 %3</translation>
+        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="91"/>
+        <source>就绪 | 目标 %1 | 进程 %2 | 特征码 %3%4</source>
+        <translation>就绪 | 目标 %1 | 进程 %2 | 特征码 %3%4</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/language.cpp" line="47"/>
@@ -190,171 +190,174 @@
         <translation>导入前确认</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="78"/>
-        <source>当前特征码表可能未保存，是否先保存？</source>
-        <translation>当前特征码表可能未保存，是否先保存？</translation>
-    </message>
-    <message>
-        <location filename="../../src/viewmodel/process.cpp" line="144"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="79"/>
+        <location filename="../../src/viewmodel/process.cpp" line="146"/>
         <source>保存</source>
         <translation>保存</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="145"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="80"/>
+        <location filename="../../src/viewmodel/process.cpp" line="147"/>
         <source>不保存</source>
         <translation>不保存</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="146"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="81"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="135"/>
+        <location filename="../../src/viewmodel/process.cpp" line="148"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="80"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="132"/>
         <source>取消</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="142"/>
-        <location filename="../../src/viewmodel/process.cpp" line="151"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="86"/>
+        <location filename="../../src/viewmodel/process.cpp" line="144"/>
+        <location filename="../../src/viewmodel/process.cpp" line="156"/>
         <source>保存特征码</source>
         <translation>保存特征码</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="86"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="142"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="139"/>
         <source>SQLite (*.db)</source>
         <translation>SQLite (*.db)</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="92"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="89"/>
         <source>导入特征码</source>
         <translation>导入特征码</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="92"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="89"/>
         <source>特征码表 (*.db)</source>
         <translation>特征码表 (*.db)</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="106"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="107"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="103"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="104"/>
         <source>导入失败: %1</source>
         <translation>导入失败: %1</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="114"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="83"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="111"/>
         <source>已取消导入</source>
         <translation>已取消导入</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="115"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="78"/>
+        <source>当前特征码表有未保存改动，导入将覆盖它。是否继续？</source>
+        <translation>当前特征码表有未保存改动，导入将覆盖它。是否继续？</translation>
+    </message>
+    <message>
+        <location filename="../../src/viewmodel/signature.cpp" line="84"/>
+        <source>取消导入（未保存改动）</source>
+        <translation>取消导入（未保存改动）</translation>
+    </message>
+    <message>
+        <location filename="../../src/viewmodel/signature.cpp" line="112"/>
         <source>取消导入（进程不一致）</source>
         <translation>取消导入（进程不一致）</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="119"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="116"/>
         <source>进程不一致已确认继续：库=%1 当前=%2</source>
         <translation>进程不一致已确认继续：库=%1 当前=%2</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="124"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="121"/>
         <source>已导入 %1 条</source>
         <translation>已导入 %1 条</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="125"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="122"/>
         <source>%1 条</source>
         <translation>%1 条</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="131"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="128"/>
         <source>进程不一致</source>
         <translation>进程不一致</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="132"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="129"/>
         <source>该特征码库记录的目标进程为“%1”，当前目标进程为“%2”。是否仍要导入？</source>
         <translation>该特征码库记录的目标进程为“%1”，当前目标进程为“%2”。是否仍要导入？</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="134"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="79"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="131"/>
         <source>继续导入</source>
         <translation>继续导入</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="142"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="139"/>
         <source>导出特征码</source>
         <translation>导出特征码</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/result.cpp" line="55"/>
         <location filename="../../src/viewmodel/result.cpp" line="56"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="154"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="155"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="151"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="152"/>
         <source>导出失败: %1</source>
         <translation>导出失败: %1</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/result.cpp" line="59"/>
-        <location filename="../../src/viewmodel/signature.cpp" line="159"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="156"/>
         <source>已导出: %1</source>
         <translation>已导出: %1</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/signature.cpp" line="160"/>
+        <location filename="../../src/viewmodel/signature.cpp" line="157"/>
         <source>特征码 → %1</source>
         <translation>特征码 → %1</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="19"/>
+        <location filename="../../src/viewmodel/process.cpp" line="20"/>
         <source>正在枚举进程…</source>
         <translation>正在枚举进程…</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="37"/>
+        <location filename="../../src/viewmodel/process.cpp" line="38"/>
         <source>已枚举 %1 个进程</source>
         <translation>已枚举 %1 个进程</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="38"/>
+        <location filename="../../src/viewmodel/process.cpp" line="39"/>
         <source>枚举 %1 个</source>
         <translation>枚举 %1 个</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="113"/>
+        <location filename="../../src/viewmodel/process.cpp" line="114"/>
         <source>请先选择目标进程</source>
         <translation>请先选择目标进程</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="125"/>
+        <location filename="../../src/viewmodel/process.cpp" line="126"/>
         <source>已选定目标：%1 (pid %2)</source>
         <translation>已选定目标：%1 (pid %2)</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="126"/>
+        <location filename="../../src/viewmodel/process.cpp" line="127"/>
         <source>选定目标 %1 (pid %2)</source>
         <translation>选定目标 %1 (pid %2)</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="135"/>
+        <location filename="../../src/viewmodel/process.cpp" line="136"/>
         <source>请重新选择目标进程</source>
         <translation>请重新选择目标进程</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="136"/>
+        <location filename="../../src/viewmodel/process.cpp" line="137"/>
         <source>返回进程页</source>
         <translation>返回进程页</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="143"/>
+        <location filename="../../src/viewmodel/process.cpp" line="145"/>
         <source>当前特征码表尚未保存，是否保存？</source>
         <translation>当前特征码表尚未保存，是否保存？</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/process.cpp" line="151"/>
-        <source>CSV (*.csv);;SQLite (*.db)</source>
-        <translation>CSV (*.csv);;SQLite (*.db)</translation>
+        <location filename="../../src/viewmodel/process.cpp" line="156"/>
+        <source>SQLite (*.db);;CSV (*.csv)</source>
+        <translation>SQLite (*.db);;CSV (*.csv)</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/scan.cpp" line="13"/>
@@ -422,6 +425,17 @@
         <location filename="../../src/viewmodel/result.cpp" line="41"/>
         <source>无结果可导出</source>
         <translation>无结果可导出</translation>
+    </message>
+    <message>
+        <location filename="../../src/viewmodel/result.cpp" line="138"/>
+        <source>进程特征码批量匹配器 v0.3.2
+基于 psig 静态库（进程特征码批量匹配）
+构建配置：%1
+Qt 版本：%2</source>
+        <translation>进程特征码批量匹配器 v0.3.2
+基于 psig 静态库（进程特征码批量匹配）
+构建配置：%1
+Qt 版本：%2</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/result.cpp" line="171"/>
@@ -514,17 +528,6 @@
         <translation>选择导出列 %1 个</translation>
     </message>
     <message>
-        <location filename="../../src/viewmodel/result.cpp" line="138"/>
-        <source>进程特征码批量匹配器 v0.3.1
-基于 psig 静态库（进程特征码批量匹配）
-构建配置：%1
-Qt 版本：%2</source>
-        <translation>进程特征码批量匹配器 v0.3.1
-基于 psig 静态库（进程特征码批量匹配）
-构建配置：%1
-Qt 版本：%2</translation>
-    </message>
-    <message>
         <location filename="../../src/viewmodel/result.cpp" line="147"/>
         <source>确认</source>
         <translation>确认</translation>
@@ -547,11 +550,6 @@ Qt 版本：%2</translation>
 </context>
 <context>
     <name>MainWindow</name>
-    <message>
-        <location filename="../../src/view/mainwindow.cpp" line="286"/>
-        <source>进程特征码批量匹配器 v0.3.1</source>
-        <translation>进程特征码批量匹配器 v0.3.1</translation>
-    </message>
     <message>
         <location filename="../../src/view/mainwindow.cpp" line="288"/>
         <source>文件(&amp;F)</source>
@@ -668,6 +666,11 @@ Qt 版本：%2</translation>
         <translation>日志</translation>
     </message>
     <message>
+        <location filename="../../src/view/mainwindow.cpp" line="286"/>
+        <source>进程特征码批量匹配器 v0.3.2</source>
+        <translation>进程特征码批量匹配器 v0.3.2</translation>
+    </message>
+    <message>
         <location filename="../../src/view/mainwindow.cpp" line="312"/>
         <source>关于</source>
         <translation>关于</translation>
@@ -748,18 +751,6 @@ Qt 版本：%2</translation>
         <source>可访问</source>
         <translation>可访问</translation>
     </message>
-    <message>
-        <source>系统空闲进程</source>
-        <translation type="vanished">系统空闲进程</translation>
-    </message>
-    <message>
-        <source>系统</source>
-        <translation type="vanished">系统</translation>
-    </message>
-    <message>
-        <source>未知进程</source>
-        <translation type="vanished">未知进程</translation>
-    </message>
 </context>
 <context>
     <name>QObject</name>
@@ -813,10 +804,6 @@ Qt 版本：%2</translation>
         <location filename="../../src/viewmodel/viewmodel_helpers.cpp" line="75"/>
         <source>特征码</source>
         <translation>特征码</translation>
-    </message>
-    <message>
-        <source>自定义</source>
-        <translation type="vanished">自定义</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/viewmodel_helpers.cpp" line="57"/>
@@ -915,10 +902,6 @@ Qt 版本：%2</translation>
         <location filename="../../src/model/resulttablemodel.cpp" line="67"/>
         <source>命中时间</source>
         <translation>命中时间</translation>
-    </message>
-    <message>
-        <source>自定义</source>
-        <translation type="vanished">自定义</translation>
     </message>
     <message>
         <location filename="../../src/model/resulttablemodel.cpp" line="68"/>

@@ -1,4 +1,4 @@
-# psig_gui E2E 测试用例清单
+# PsigMatcher E2E 测试用例清单
 
 - 版本：v0.3.1
 - 前置：`design/v0.3.1/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
@@ -7,7 +7,7 @@
 
 ## 入口与注入方式
 
-- 程序：`gui/out/bin/Release/psig_gui.exe`（静态 Qt，自包含）。
+- 程序：`gui/out/bin/Release/PsigMatcher.exe`（静态 Qt，自包含）。
 - 注入：`keybd_event`（Win32 原始输入）注入快捷键；`PostMessage(WM_CLOSE)` 关闭窗口。
 - 截图：客户区（排除标题栏），保存至 `gui/out/verify/shot_xx.png`。
 - 快捷键入口：Ctrl+1/2/3 切页（视图菜单）、Ctrl+N 新增行、Ctrl+R 刷新进程、F5 扫描、Ctrl+M 列管理、Ctrl+O/Ctrl+S 导入/导出、F1 关于。
@@ -71,9 +71,9 @@
 ## E2E-01 启动主界面（进程页）
 
 - 场景：冷启动，主窗口渲染，默认落在进程选择页（启动自动枚举进行中）。
-- 前置：已编译 `psig_gui.exe`；无残留实例。
+- 前置：已编译 `PsigMatcher.exe`；无残留实例。
 - 操作步骤：
-  1. 启动 `psig_gui.exe`。
+  1. 启动 `PsigMatcher.exe`。
   2. 等待主窗口句柄就绪并置前。
   3. 截取客户区 → `shot_01_start.png`。
 - 预期结果：窗口标题为「进程特征码批量匹配器 v0.3.1」；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。

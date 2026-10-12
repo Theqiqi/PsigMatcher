@@ -11,7 +11,7 @@ volatile unsigned int g_gui_counter = 0;
 
 int main() {
     std::printf("========================================\n");
-    std::printf(" psig_gui_target : GUI 测试目标程序\n");
+    std::printf(" psig_target : GUI 测试目标程序\n");
     std::printf("========================================\n");
     std::printf("PID: %lu\n", static_cast<unsigned long>(GetCurrentProcessId()));
     std::printf("----------------------------------------\n");

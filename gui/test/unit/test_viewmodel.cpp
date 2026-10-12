@@ -28,6 +28,29 @@ PSIG_REGISTER_QT_ENV()
 #define WAIT_ENUM(w) \
     QTRY_VERIFY_WITH_TIMEOUT((w).processPage()->table()->model()->rowCount() > 0, 10000)
 
+namespace {
+// 点击当前可见 QMessageBox 中文本匹配的按钮（用于驱动模态提示的取消/不保存路径）
+void clickMessageBoxButton(const QString& text) {
+    for (QWidget* top : QApplication::topLevelWidgets()) {
+        auto* mb = qobject_cast<QMessageBox*>(top);
+        if (!mb) continue;
+        for (QAbstractButton* b : mb->buttons()) {
+            if (b->text() == text) {
+                b->click();
+                return;
+            }
+        }
+    }
+}
+
+// 关闭窗口的用例需阻止「最后窗口关闭即退出」干扰后续断言
+struct QuitOnLastWindowClosedGuard {
+    bool prev = QApplication::quitOnLastWindowClosed();
+    QuitOnLastWindowClosedGuard() { QApplication::setQuitOnLastWindowClosed(false); }
+    ~QuitOnLastWindowClosedGuard() { QApplication::setQuitOnLastWindowClosed(prev); }
+};
+} // namespace
+
 TEST(ViewModel, InstallBindsAndInitialColumns) {
     MainWindow w;
     MainViewModel vm;
@@ -232,6 +255,116 @@ TEST(ViewModel, ReselectPromptsSaveAndCancelAborts) {
     QTest::qWait(50);
     EXPECT_TRUE(w.signaturePage()->isVisible());   // 取消 → 未切回进程页
     EXPECT_FALSE(w.processPage()->isVisible());
+}
+
+// C-01：未保存状态由真实改动驱动（单元格编辑计入；导出成功清除；再编辑重新置脏）
+TEST(ViewModel, SignatureDirtyTracksRealEditsAndExportClearsIt) {
+    MainWindow w;
+    MainViewModel vm;
+    vm.install(&w);
+    ASSERT_FALSE(vm.isSignatureDirty());
+
+    auto* m = w.signaturePage()->table()->model();
+    w.signaturePage()->addRowAction()->trigger();      // 增行 → 脏
+    ASSERT_EQ(m->rowCount(), 1);
+    EXPECT_TRUE(vm.isSignatureDirty());
+    EXPECT_TRUE(w.persistentLabel()->text().endsWith(QStringLiteral("*"))); // 增行后立即出现标记
+
+    // 导出成功 → 视为已保存（标记消失）
+    const QString path = QDir::temp().filePath(QStringLiteral("psig_vm_dirty"));
+    QFile::remove(path + QStringLiteral(".db"));
+    vm.exportSignaturesToPath(path + QStringLiteral(".db"));
+    EXPECT_FALSE(vm.isSignatureDirty());
+    EXPECT_FALSE(w.persistentLabel()->text().endsWith(QStringLiteral("*")));
+
+    // 直接在模型中改单元格（模型发 dataChanged）→ 真实脏标记重新置位
+    ASSERT_TRUE(m->setData(m->index(0, 2), QStringLiteral("edited-cell")));
+    EXPECT_TRUE(vm.isSignatureDirty());
+    EXPECT_TRUE(w.persistentLabel()->text().endsWith(QStringLiteral("*")));
+    QFile::remove(path + QStringLiteral(".db"));
+}
+
+// C-02：有未保存改动时导入 → 仅覆盖确认（无保存/不保存选项）；「取消」中止导入且不改表
+TEST(ViewModel, ImportPromptsOverwriteWithoutSaveOptions) {
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    WAIT_ENUM(w);
+
+    w.signaturePage()->addRowAction()->trigger();       // 产生未保存改动
+    ASSERT_TRUE(vm.isSignatureDirty());
+
+    QStringList buttons;
+    QTimer::singleShot(150, [&buttons]() {
+        for (QWidget* top : QApplication::topLevelWidgets()) {
+            auto* mb = qobject_cast<QMessageBox*>(top);
+            if (!mb) continue;
+            for (QAbstractButton* b : mb->buttons()) buttons << b->text();
+            clickMessageBoxButton(QStringLiteral("取消"));
+            break;
+        }
+    });
+    w.importSignaturesAction()->trigger();               // 模态覆盖确认
+    QTest::qWait(80);
+
+    EXPECT_FALSE(buttons.contains(QStringLiteral("保存")));
+    EXPECT_FALSE(buttons.contains(QStringLiteral("不保存")));
+    EXPECT_TRUE(buttons.contains(QStringLiteral("继续导入")));
+    EXPECT_TRUE(buttons.contains(QStringLiteral("取消")));
+    EXPECT_EQ(w.signaturePage()->table()->model()->rowCount(), 1); // 表不变
+    EXPECT_TRUE(vm.isSignatureDirty());                            // 未保存状态不变
+    EXPECT_NE(w.transientLabel()->text().indexOf(QStringLiteral("已取消导入")), -1);
+}
+
+// C-03：关闭时有未保存改动 → 提示；「取消」阻止关闭、「不保存」关闭；无改动则直接关闭
+TEST(ViewModel, ClosePromptsOnUnsavedChanges) {
+    QuitOnLastWindowClosedGuard quitGuard;
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    WAIT_ENUM(w);
+
+    EXPECT_FALSE(vm.isSignatureDirty());
+    EXPECT_TRUE(w.close());                     // 无未保存改动 → 直接关闭
+
+    w.show();
+    w.signaturePage()->addRowAction()->trigger();
+    ASSERT_TRUE(vm.isSignatureDirty());
+
+    QTimer::singleShot(150, []() { clickMessageBoxButton(QStringLiteral("取消")); });
+    EXPECT_FALSE(w.close());                    // 取消 → 阻止关闭
+    EXPECT_TRUE(w.isVisible());
+
+    QTimer::singleShot(150, []() { clickMessageBoxButton(QStringLiteral("不保存")); });
+    EXPECT_TRUE(w.close());                     // 不保存 → 关闭
+}
+
+// C-03：关闭提示的按钮集合为「保存/不保存/取消」（与重选进程提示同构）
+TEST(ViewModel, ClosePromptButtonSet) {
+    QuitOnLastWindowClosedGuard quitGuard;
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    WAIT_ENUM(w);
+    w.signaturePage()->addRowAction()->trigger();
+
+    QStringList buttons;
+    QTimer::singleShot(150, [&buttons]() {
+        for (QWidget* top : QApplication::topLevelWidgets()) {
+            auto* mb = qobject_cast<QMessageBox*>(top);
+            if (!mb) continue;
+            for (QAbstractButton* b : mb->buttons()) buttons << b->text();
+            clickMessageBoxButton(QStringLiteral("取消"));
+            break;
+        }
+    });
+    EXPECT_FALSE(w.close());
+    EXPECT_TRUE(buttons.contains(QStringLiteral("保存")));
+    EXPECT_TRUE(buttons.contains(QStringLiteral("不保存")));
+    EXPECT_TRUE(buttons.contains(QStringLiteral("取消")));
 }
 
 // C-05：导入时库记录的目标进程名与当前目标不一致 → 弹窗；「取消」中止、「继续导入」应用

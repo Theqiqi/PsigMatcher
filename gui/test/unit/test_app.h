@@ -10,7 +10,7 @@ class QtEnvironment : public ::testing::Environment {
 public:
     void SetUp() override {
         static int argc = 1;
-        static char arg0[] = "psig_gui_test";
+        static char arg0[] = "PsigMatcher_test";
         static char* argv[] = {arg0, nullptr};
         m_app = new QApplication(argc, argv); // 不 delete（刻意泄漏）
         // 固定默认语言为中文，使断言与运行机器的系统语言无关（install 默认语言经 QLocale() 判定）

@@ -1,6 +1,7 @@
 // viewmodel/bind.cpp - ViewModel：控件/动作装配（bind*）与初始列
 #include "viewmodel/mainviewmodel.h"
 
+#include <QAbstractItemModel>
 #include <QAction>
 #include <QHeaderView>
 #include <QLineEdit>
@@ -15,6 +16,10 @@
 #include "viewmodel/viewmodel_helpers.h"
 
 void MainViewModel::bindSignaturePage() {
+    // C-01：单元格编辑（模型发 dataChanged）计入未保存改动——真实脏标记
+    connect(m_sigModel, &QAbstractItemModel::dataChanged, this,
+            [this]() { markSignatureDirty(); });
+
     // 行操作改由表格右键菜单触发
     auto* page = m_view->signaturePage();
     connect(page->addRowAction(), &QAction::triggered, this, &MainViewModel::onAddSignatureRow);
@@ -64,6 +69,8 @@ void MainViewModel::bindGlobalActions() {
     connect(m_view->confirmProcessAction(), &QAction::triggered, this, &MainViewModel::onConfirmProcessSelection);
     connect(m_view->reselectProcessAction(), &QAction::triggered, this, &MainViewModel::onReselectProcess);
     connect(m_view->clearResultsAction(), &QAction::triggered, this, &MainViewModel::onClearResults);
+    // C-03：文件菜单「退出」真正关闭窗口（复用关闭未保存提示）
+    connect(m_view->quitAction(), &QAction::triggered, m_view, &QWidget::close);
     connect(m_view->showSignaturePageAction(), &QAction::triggered, m_view, &MainWindow::showSignaturePage);
     connect(m_view->showProcessPageAction(), &QAction::triggered, m_view, &MainWindow::showProcessPage);
     connect(m_view->showResultPageAction(), &QAction::triggered, m_view, &MainWindow::showResultPage);

@@ -147,6 +147,34 @@ TEST(UserFlow, ExportThenImportDb) {
     QFile::remove(path);
 }
 
+// UF-14/UF-15：未保存状态贯通（真实文件）——编辑置脏、导出清脏、导入覆盖后清脏
+TEST(UserFlow, UnsavedStateLifecycleWithRealFiles) {
+    MainWindow w;
+    MainViewModel vm;
+    vm.install(&w);
+    auto* model = w.signaturePage()->table()->model();
+    ASSERT_FALSE(vm.isSignatureDirty());
+
+    w.signaturePage()->addRowAction()->trigger();
+    model->setData(model->index(0, 0), QStringLiteral("p1"));
+    model->setData(model->index(0, 1), QStringLiteral("DE AD BE EF"));
+    EXPECT_TRUE(vm.isSignatureDirty());
+
+    const QString path = tempPath("psig_uf_unsaved.db");
+    QFile::remove(path);
+    vm.exportSignaturesToPath(path);
+    ASSERT_TRUE(QFileInfo::exists(path));
+    EXPECT_FALSE(vm.isSignatureDirty());           // 导出成功 = 已保存
+
+    model->setData(model->index(0, 0), QStringLiteral("p1-edited"));
+    EXPECT_TRUE(vm.isSignatureDirty());            // 单元格编辑重新置脏
+
+    vm.importSignaturesFromPath(path);             // 导入覆盖 → 清脏
+    EXPECT_FALSE(vm.isSignatureDirty());
+    EXPECT_EQ(model->data(model->index(0, 0)).toString(), QStringLiteral("p1"));
+    QFile::remove(path);
+}
+
 // UF-A10 错误路径：导入不存在的文件 → 瞬时错误反馈
 TEST(UserFlow, ImportMissingFileShowsError) {
     MainWindow w;

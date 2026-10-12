@@ -4,6 +4,7 @@
 #include <QFileDialog>
 #include <QImage>
 #include <QItemSelectionModel>
+#include <QKeySequence>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPixmap>
@@ -127,8 +128,8 @@ void MainViewModel::onConfirmProcessSelection() {
 }
 
 void MainViewModel::onReselectProcess() {
-    if (m_sigModel->rowCount() > 0 && m_sigDirty) {
-        if (!askSaveBeforeReselect()) return; // C-04：取消 → 中止重新选择
+    if (m_sigDirty) {
+        if (!askSaveSignatureChanges(/*saveCancelAborts=*/false)) return; // 取消 → 中止重新选择
     }
     m_view->setProcessSelectionLocked(false);
     m_view->showProcessPage();
@@ -136,20 +137,25 @@ void MainViewModel::onReselectProcess() {
     logTagged(QStringLiteral("nav"), tr("返回进程页"));
 }
 
-// C-04：重新选择进程前，若特征码表有未保存改动，弹窗询问是否保存；返回 false 表示取消（中止切换）
-bool MainViewModel::askSaveBeforeReselect() {
+// C-01/C-03：未保存保存提示（重新选择进程与关闭程序共用）；返回 false 表示中止当前动作
+// saveCancelAborts：选择「保存」但在另存为对话框取消时，是否中止（关闭=是；重选=沿用「不阻断」）
+bool MainViewModel::askSaveSignatureChanges(bool saveCancelAborts) {
     QMessageBox box(m_view);
     box.setWindowTitle(tr("保存特征码"));
     box.setText(tr("当前特征码表尚未保存，是否保存？"));
     QPushButton* saveBtn = box.addButton(tr("保存"), QMessageBox::AcceptRole);
-    box.addButton(tr("不保存"), QMessageBox::DestructiveRole);
+    QPushButton* discardBtn = box.addButton(tr("不保存"), QMessageBox::DestructiveRole);
     QPushButton* cancelBtn = box.addButton(tr("取消"), QMessageBox::RejectRole);
+    // 确定性键盘入口（可访问性 / E2E 注入）：Ctrl+S 保存、Ctrl+D 不保存、Esc 取消
+    saveBtn->setShortcut(QKeySequence(QStringLiteral("Ctrl+S")));
+    discardBtn->setShortcut(QKeySequence(QStringLiteral("Ctrl+D")));
     box.exec();
-    if (box.clickedButton() == cancelBtn) return false; // 取消 → 中止重新选择
+    if (box.clickedButton() == cancelBtn) return false; // 取消 → 中止当前动作
     if (box.clickedButton() == saveBtn) {
         const QString path = QFileDialog::getSaveFileName(
-            m_view, tr("保存特征码"), QString(), tr("CSV (*.csv);;SQLite (*.db)"));
-        if (!path.isEmpty()) exportSignaturesToPath(path);
+            m_view, tr("保存特征码"), QString(), tr("SQLite (*.db);;CSV (*.csv)"));
+        if (path.isEmpty()) return !saveCancelAborts; // 另存为取消：关闭→中止；重选→不阻断
+        exportSignaturesToPath(path);
     }
     return true;
 }

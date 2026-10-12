@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(psig_gui LANGUAGES CXX)
+project(PsigMatcher LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 if(NOT MSVC)
-    message(FATAL_ERROR "psig_gui 仅支持 MSVC (cl.exe) 工具链")
+    message(FATAL_ERROR "PsigMatcher 仅支持 MSVC (cl.exe) 工具链")
 endif()
 
 # Qt6（Debug 共享 / Release 静态），经 CMAKE_PREFIX_PATH 定位
@@ -20,10 +20,10 @@ find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent Test LinguistTools)
 get_target_property(_qt_core_type Qt6::Core TYPE)
 if(_qt_core_type STREQUAL "STATIC_LIBRARY")
     set(PSIG_QT_STATIC ON)
-    message(STATUS "psig_gui: 静态 Qt 构建（Release /MT）")
+    message(STATUS "PsigMatcher: 静态 Qt 构建（Release /MT）")
 else()
     set(PSIG_QT_STATIC OFF)
-    message(STATUS "psig_gui: 共享 Qt 构建（Debug /MDd）")
+    message(STATUS "PsigMatcher: 共享 Qt 构建（Debug /MDd）")
 endif()
 
 # 跨项目引用 psig 静态库（直接指向拥有方构建输出）
@@ -33,7 +33,7 @@ find_library(PSIG_LIB NAMES psig
 if(NOT PSIG_LIB)
     message(FATAL_ERROR "未找到 psig.lib：请先编译 psig（../psig/out/lib/${CMAKE_BUILD_TYPE}/）")
 endif()
-message(STATUS "psig_gui: PSIG_LIB=${PSIG_LIB}")
+message(STATUS "PsigMatcher: PSIG_LIB=${PSIG_LIB}")
 
 # 共享 Qt 运行期：将 Qt bin 加入 PATH（qt.conf/插件由 Qt 自动定位）
 if(NOT PSIG_QT_STATIC)
@@ -80,8 +80,8 @@ enable_testing()
 # i18n：由 .ts 生成 .qm（lrelease），并以资源前缀 /i18n 嵌入目标，供 QTranslator 运行期装载。
 # 采用自定义命令而非 qt_add_translations：可对生产与测试目标复用同一批 .qm，且构建确定。
 set(GUI_TS_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/res/i18n/psig_gui_zh_CN.ts
-    ${CMAKE_CURRENT_SOURCE_DIR}/res/i18n/psig_gui_en_US.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/i18n/PsigMatcher_zh_CN.ts
+    ${CMAKE_CURRENT_SOURCE_DIR}/res/i18n/PsigMatcher_en_US.ts
 )
 set(GUI_QM_FILES)
 foreach(_ts IN LISTS GUI_TS_FILES)
@@ -113,4 +113,4 @@ add_subdirectory(test/unit)
 add_subdirectory(test/integration)
 
 # 生产目标嵌入翻译资源
-gui_embed_i18n(psig_gui psig_gui_i18n)
+gui_embed_i18n(PsigMatcher PsigMatcher_i18n)

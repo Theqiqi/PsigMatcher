@@ -38,6 +38,7 @@ public:
     QAction* confirmProcessAction() const { return m_confirmProcessAction; }
     QAction* reselectProcessAction() const { return m_reselectProcessAction; }
     QAction* clearResultsAction() const { return m_clearResultsAction; }
+    QAction* quitAction() const { return m_quitAction; } // C-03：文件菜单「退出」（由 ViewModel 连接关闭）
 
     // 视图导航动作 getter（供 ViewModel connect）
     QAction* showSignaturePageAction() const { return m_showSignatureAction; }

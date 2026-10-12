@@ -46,13 +46,13 @@ public:
     // C-01：特征码表是否有未保存改动（唯一来源，供状态刷新与测试查询）
     bool isSignatureDirty() const { return m_sigDirty; }
 
-protected:
-    // C-03：拦截 View 的关闭请求（未保存改动时提示保存/不保存/取消）
-    bool eventFilter(QObject* watched, QEvent* event) override;
-
     // 语言切换（"zh_CN" / "en_US" / ""（跟随系统））；供菜单与测试调用
     // feedback=false 时不产生瞬时/日志反馈（启动装载默认语言时使用）
     void applyLanguage(const QString& code, bool feedback = true);
+
+protected:
+    // C-03：拦截 View 的关闭请求（未保存改动时提示保存/不保存/取消）
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private slots:
     void onAddSignatureRow();

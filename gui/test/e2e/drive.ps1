@@ -1,7 +1,7 @@
 <#
-drive.ps1 -- psig_gui E2E 驱动脚本
+drive.ps1 -- PsigMatcher E2E 驱动脚本
 
-真实启动 psig_gui.exe，向主窗口注入键盘事件（Ctrl+快捷键）与 WM_CLOSE，
+真实启动 PsigMatcher.exe，向主窗口注入键盘事件（Ctrl+快捷键）与 WM_CLOSE，
 并截取客户区画面到 out/verify/shot_xx.png，供 analyze.py 做像素断言。
 
 注入方式说明：
@@ -12,7 +12,7 @@ drive.ps1 -- psig_gui E2E 驱动脚本
 - 截图：排除标题栏，仅截客户区，保证稳定性对比。
 #>
 param(
-    [string]$Exe    = "C:\d\project\agent\env\gui\out\bin\Release\psig_gui.exe",
+    [string]$Exe    = "C:\d\project\agent\env\gui\out\bin\Release\PsigMatcher.exe",
     [string]$OutDir = "C:\d\project\agent\env\gui\out\verify",
     [int]$StabilizeMs = 900
 )
@@ -124,8 +124,8 @@ function Capture-Client([IntPtr]$hwnd, [string]$path) {
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 
 Write-Host "[drive] launching $Exe"
-$outLog = Join-Path $OutDir "psig_gui_out.log"
-$errLog = Join-Path $OutDir "psig_gui_err.log"
+$outLog = Join-Path $OutDir "PsigMatcher_out.log"
+$errLog = Join-Path $OutDir "PsigMatcher_err.log"
 # 用 System.Diagnostics.Process 直接启动：既支持 MainWindowHandle 轮询与 ExitCode 读取，
 # 又支持标准输出/错误重定向（Start-Process -Redirect* 会导致 ExitCode 不可读）
 $psi = New-Object System.Diagnostics.ProcessStartInfo

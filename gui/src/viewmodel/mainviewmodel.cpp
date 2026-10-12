@@ -8,6 +8,7 @@
 //   language.cpp  —— 语言切换
 #include "viewmodel/mainviewmodel.h"
 
+#include <QEvent>
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QTimer>
@@ -39,6 +40,9 @@ void MainViewModel::install(MainWindow* view) {
     m_view->resultPage()->setModel(m_resultModel);
     m_view->processPage()->setDefaultColumnWidths(); // C-07：进程列宽
 
+    // C-03：关闭裁决归属 ViewModel（View 不含事件处理逻辑）
+    m_view->installEventFilter(this);
+
     m_procWatcher = new QFutureWatcher<std::vector<psig::ProcessInfo>>(this);
     m_scanWatcher = new QFutureWatcher<std::vector<psig::MatchResult>>(this);
     connect(m_procWatcher, &QFutureWatcherBase::finished, this, &MainViewModel::onProcessesEnumerated);
@@ -67,7 +71,7 @@ void MainViewModel::install(MainWindow* view) {
     m_view->showProcessPage();
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("就绪，请选择目标进程"));
-    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.3.1 已就绪"));
+    logTagged(QStringLiteral("startup"), tr("进程特征码批量匹配器 v0.3.2 已就绪"));
 
     onRefreshProcesses(); // C-09：启动后自动枚举一次进程
 }
@@ -82,11 +86,30 @@ void MainViewModel::refreshPersistentStatus() {
     const int procs = m_procModel ? m_procModel->rowCount() : 0;
     const QString target = m_targetPid ? QStringLiteral("%1(%2)").arg(m_targetName).arg(m_targetPid)
                                        : QStringLiteral("-");
-    m_view->setPersistentStatus(
-        tr("就绪 | 目标 %1 | 进程 %2 | 特征码 %3").arg(target).arg(procs).arg(patterns));
+    // C-01：未保存改动时在持久状态末尾追加 '*'（真实脏标记的唯一可见位置）
+    const QString dirtyMark = m_sigDirty ? QStringLiteral(" *") : QString();
+    m_view->setPersistentStatus(tr("就绪 | 目标 %1 | 进程 %2 | 特征码 %3%4")
+                                   .arg(target)
+                                   .arg(procs)
+                                   .arg(patterns)
+                                   .arg(dirtyMark));
 }
 
-void MainViewModel::markSignatureDirty() { m_sigDirty = true; }
+void MainViewModel::markSignatureDirty() {
+    m_sigDirty = true;
+    refreshPersistentStatus(); // C-01：立即反映未保存标记
+}
+
+// C-03：关闭请求拦截——有未保存改动则提示保存/不保存/取消；取消则阻止关闭
+bool MainViewModel::eventFilter(QObject* watched, QEvent* event) {
+    if (watched == m_view && event && event->type() == QEvent::Close) {
+        if (m_sigDirty && !askSaveSignatureChanges(/*saveCancelAborts=*/true)) {
+            event->ignore();
+            return true;
+        }
+    }
+    return QObject::eventFilter(watched, event);
+}
 
 // C-08：日志窗口右键菜单 / 清空 / 视图菜单开关
 void MainViewModel::onLogContextMenu(const QPoint& pos) {

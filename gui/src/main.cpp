@@ -8,7 +8,7 @@
 
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("psig_gui"));
+    QApplication::setApplicationName(QStringLiteral("PsigMatcher"));
     QApplication::setOrganizationName(QStringLiteral("psig"));
 
     QFile qss(QStringLiteral(":/style.qss"));

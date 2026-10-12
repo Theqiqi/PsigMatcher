@@ -35,6 +35,12 @@
 
 PSIG_REGISTER_QT_ENV()
 
+// C-04：程序改名/版本——窗口标题为 v0.3.2（源语言中文）
+TEST(View, WindowTitleCarriesVersion) {
+    MainWindow w;
+    EXPECT_EQ(w.windowTitle(), QString("进程特征码批量匹配器 v0.3.2"));
+}
+
 TEST(View, MainWindowGetters) {
     MainWindow w;
     ASSERT_NE(w.signaturePage(), nullptr);

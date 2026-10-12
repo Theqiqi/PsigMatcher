@@ -25,7 +25,7 @@ void MainViewModel::applyLanguage(const QString& code, bool feedback) {
     // 源语言为中文：仅非中文目标需要装载翻译
     if (effective != QStringLiteral("zh_CN")) {
         auto* translator = new QTranslator(this);
-        if (translator->load(QStringLiteral(":/i18n/psig_gui_") + effective + QStringLiteral(".qm"))) {
+        if (translator->load(QStringLiteral(":/i18n/PsigMatcher_") + effective + QStringLiteral(".qm"))) {
             QApplication::installTranslator(translator);
             m_translator = translator;
         } else {

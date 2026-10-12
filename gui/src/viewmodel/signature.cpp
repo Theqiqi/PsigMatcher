@@ -71,21 +71,18 @@ void MainViewModel::onManageColumns() {
 }
 
 void MainViewModel::onImportSignatures() {
-    // 前置询问：当前特征码表非空时先问是否保存（需决策 → 弹窗）
-    if (m_sigModel->rowCount() > 0) {
+    // C-02：导入与保存解耦——导入前仅做覆盖确认，且仅当真有未保存改动（需决策 → 弹窗）
+    if (m_sigDirty) {
         QMessageBox box(m_view);
         box.setWindowTitle(tr("导入前确认"));
-        box.setText(tr("当前特征码表可能未保存，是否先保存？"));
-        QPushButton* saveBtn = box.addButton(tr("保存"), QMessageBox::AcceptRole);
-        box.addButton(tr("不保存"), QMessageBox::DestructiveRole);
-        QPushButton* cancelBtn = box.addButton(tr("取消"), QMessageBox::RejectRole);
+        box.setText(tr("当前特征码表有未保存改动，导入将覆盖它。是否继续？"));
+        QPushButton* continueBtn = box.addButton(tr("继续导入"), QMessageBox::AcceptRole);
+        box.addButton(tr("取消"), QMessageBox::RejectRole);
         box.exec();
-        if (box.clickedButton() == cancelBtn) return; // 取消路径
-        if (box.clickedButton() == saveBtn) {
-            const QString savePath = QFileDialog::getSaveFileName(
-                m_view, tr("保存特征码"), QString(), tr("SQLite (*.db)"));
-            if (savePath.isEmpty()) return; // 取消保存 → 中止导入
-            exportSignaturesToPath(savePath);
+        if (box.clickedButton() != continueBtn) { // 取消路径：中止导入，当前表不变
+            m_view->setTransientMessage(tr("已取消导入"));
+            logTagged(QStringLiteral("import"), tr("取消导入（未保存改动）"));
+            return;
         }
     }
     const QString path = QFileDialog::getOpenFileName(
@@ -119,8 +116,8 @@ void MainViewModel::importSignaturesFromPath(const QString& path) {
                   tr("进程不一致已确认继续：库=%1 当前=%2").arg(libProc, m_targetName));
     }
     applyTableToModel(table);
-    m_sigDirty = false;               // C-04：导入后视为已保存
-    refreshPersistentStatus();
+    m_sigDirty = false;               // C-01：导入后视为已保存
+    refreshPersistentStatus();        // C-01：未保存标记 '*' 随之消失
     m_view->setTransientMessage(tr("已导入 %1 条").arg(table.rows.size()));
     logTagged(QStringLiteral("import"), tr("%1 条").arg(table.rows.size()));
 }
@@ -155,7 +152,8 @@ void MainViewModel::exportSignaturesToPath(const QString& path) {
         logTagged(QStringLiteral("error"), tr("导出失败: %1").arg(QString::fromStdString(err)));
         return;
     }
-    m_sigDirty = false;               // C-04：导出后视为已保存
+    m_sigDirty = false;               // C-01：导出后视为已保存
+    refreshPersistentStatus();        // C-01：未保存标记 '*' 随之消失
     m_view->setTransientMessage(tr("已导出: %1").arg(path));
     logTagged(QStringLiteral("export"), tr("特征码 → %1").arg(path));
 }
