@@ -44,7 +44,6 @@ void MainViewModel::bindProcessPage() {
 void MainViewModel::bindResultPage() {
     auto* page = m_view->resultPage();
     connect(page->exportCsvAction(), &QAction::triggered, this, &MainViewModel::onExportResultsCsv);
-    connect(page->exportDbAction(), &QAction::triggered, this, &MainViewModel::onExportResultsDb);
     connect(page->exportTxtAction(), &QAction::triggered, this, &MainViewModel::onExportResultsTxt);
     connect(page->selectColumnsAction(), &QAction::triggered, this, &MainViewModel::onSelectExportColumns);
     connect(page->deleteRowsAction(), &QAction::triggered, this, &MainViewModel::onDeleteResultRows);
@@ -110,7 +109,6 @@ void MainViewModel::onProcessContextMenu(const QPoint& pos) {
 void MainViewModel::onResultContextMenu(const QPoint& pos) {
     auto* page = m_view->resultPage();
     page->exportCsvAction()->setEnabled(m_resultModel->rowCount() > 0);
-    page->exportDbAction()->setEnabled(m_resultModel->rowCount() > 0);
     page->exportTxtAction()->setEnabled(m_resultModel->rowCount() > 0);
     auto* t = page->table();
     page->contextMenu()->exec(t->viewport()->mapToGlobal(pos));

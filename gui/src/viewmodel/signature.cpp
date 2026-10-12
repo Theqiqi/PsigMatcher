@@ -83,13 +83,13 @@ void MainViewModel::onImportSignatures() {
         if (box.clickedButton() == cancelBtn) return; // 取消路径
         if (box.clickedButton() == saveBtn) {
             const QString savePath = QFileDialog::getSaveFileName(
-                m_view, tr("保存特征码"), QString(), tr("CSV (*.csv);;SQLite (*.db)"));
+                m_view, tr("保存特征码"), QString(), tr("SQLite (*.db)"));
             if (savePath.isEmpty()) return; // 取消保存 → 中止导入
             exportSignaturesToPath(savePath);
         }
     }
     const QString path = QFileDialog::getOpenFileName(
-        m_view, tr("导入特征码"), QString(), tr("特征码表 (*.csv *.db);;CSV (*.csv);;SQLite (*.db)"));
+        m_view, tr("导入特征码"), QString(), tr("特征码表 (*.db)"));
     if (path.isEmpty()) return; // 取消路径
     importSignaturesFromPath(path);
 }
@@ -116,7 +116,7 @@ void MainViewModel::importSignaturesFromPath(const QString& path) {
 
 void MainViewModel::onExportSignatures() {
     const QString path = QFileDialog::getSaveFileName(
-        m_view, tr("导出特征码"), QString(), tr("CSV (*.csv);;SQLite (*.db)"));
+        m_view, tr("导出特征码"), QString(), tr("SQLite (*.db)"));
     if (path.isEmpty()) return;
     exportSignaturesToPath(path);
 }
@@ -154,7 +154,7 @@ psig::Table MainViewModel::tableFromModel() const {
         for (const auto& cell : r.cells) tr.cells.push_back(cell.toStdString());
         t.rows.push_back(tr);
     }
-    t.templateText = m_templateText.toStdString();
+    // C-04：特征码表不携带结果页模板文本（模板仅属匹配结果页）
     return t;
 }
 
@@ -169,7 +169,5 @@ void MainViewModel::applyTableToModel(const psig::Table& table) {
         rows.push_back(sr);
     }
     m_sigModel->setRows(rows);
-    // 模板随表携带
-    m_templateText = QString::fromStdString(table.templateText);
-    m_view->resultPage()->setTemplateText(m_templateText);
+    // C-04：不再回填结果页模板文本（特征码表与模板解耦）
 }

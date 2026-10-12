@@ -10,6 +10,8 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
+#include "view/hoverrowdelegate.h"
+
 ProcessSelectionPage::ProcessSelectionPage(QWidget* parent) : QWidget(parent) {
     m_filterEdit = new QLineEdit(this);
 
@@ -31,6 +33,7 @@ ProcessSelectionPage::ProcessSelectionPage(QWidget* parent) : QWidget(parent) {
     m_table->setSortingEnabled(true); // 点击列头排序
     m_table->horizontalHeader()->setSectionsClickable(true);
     m_table->setIconSize(QSize(16, 16));
+    HoverRowDelegate::attach(m_table); // C-02：整行悬停高亮
 
     // 筛选框置于列表底部
     auto* layout = new QVBoxLayout(this);

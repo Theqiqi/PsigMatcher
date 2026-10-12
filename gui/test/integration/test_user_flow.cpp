@@ -72,7 +72,8 @@ TEST(UserFlow, AddAndDeleteRows) {
 }
 
 // UF-A7：模板文本随特征码 CSV 往返携带
-TEST(UserFlow, TemplateCarriedThroughCsvRoundTrip) {
+// C-04：模板文本与特征码表解耦——导出不带模板，导入不覆盖结果页模板
+TEST(UserFlow, TemplateDecoupledFromSignatureTable) {
     MainWindow w;
     MainViewModel vm;
     vm.install(&w);
@@ -80,21 +81,28 @@ TEST(UserFlow, TemplateCarriedThroughCsvRoundTrip) {
     w.signaturePage()->addRowAction()->trigger();
     model->setData(model->index(0, 0), QStringLiteral("p1"));
     model->setData(model->index(0, 1), QStringLiteral("48 8B ?? 05"));
-    const QString tmpl = QStringLiteral("模板第一行\n含,逗号");
-    vm.setTemplateText(tmpl);
+    vm.setTemplateText(QStringLiteral("模板第一行\n含,逗号"));
 
     const QString path = tempPath("psig_uf_tmpl.csv");
     QFile::remove(path);
     vm.exportSignaturesToPath(path);
     ASSERT_TRUE(QFileInfo::exists(path));
 
-    // 清空当前表后再导入
+    // 导出文件不应包含结果页模板文本
+    QFile f(path);
+    ASSERT_TRUE(f.open(QIODevice::ReadOnly));
+    const QString content = QString::fromUtf8(f.readAll());
+    f.close();
+    EXPECT_FALSE(content.contains(QStringLiteral("模板第一行")));
+
+    // 导入不覆盖结果页当前模板
+    w.resultPage()->setTemplateText(QStringLiteral("当前模板"));
     w.signaturePage()->table()->selectAll();
     w.signaturePage()->deleteRowsAction()->trigger();
     ASSERT_EQ(model->rowCount(), 0);
     vm.importSignaturesFromPath(path);
     EXPECT_EQ(model->rowCount(), 1);
-    EXPECT_EQ(w.resultPage()->templateText(), tmpl);
+    EXPECT_EQ(w.resultPage()->templateText(), QStringLiteral("当前模板"));
     QFile::remove(path);
 }
 
@@ -129,7 +137,6 @@ TEST(UserFlow, ExportThenImportDb) {
     w.signaturePage()->addRowAction()->trigger();
     model->setData(model->index(0, 0), QStringLiteral("p1"));
     model->setData(model->index(0, 1), QStringLiteral("DE AD BE EF"));
-    vm.setTemplateText(QStringLiteral("DB模板"));
 
     const QString path = tempPath("psig_uf_sig.db");
     QFile::remove(path);
@@ -137,7 +144,6 @@ TEST(UserFlow, ExportThenImportDb) {
     ASSERT_TRUE(QFileInfo::exists(path));
     vm.importSignaturesFromPath(path);
     EXPECT_EQ(model->rowCount(), 1);
-    EXPECT_EQ(w.resultPage()->templateText(), QStringLiteral("DB模板"));
     QFile::remove(path);
 }
 
@@ -251,18 +257,14 @@ TEST(UserFlow, ScanThenEditAndExportResults) {
     resModel->setData(resModel->index(0, customCol), QStringLiteral("备注A"));
     EXPECT_EQ(resModel->index(0, customCol).data().toString(), QStringLiteral("备注A"));
 
-    // 三种格式导出（在删除前，保证有数据可导出）
+    // 两种格式导出（结果仅 CSV/TXT，不再有 DB 入口）
     const QString csv = tempPath("psig_uf_res.csv");
-    const QString db = tempPath("psig_uf_res.db");
     const QString txt = tempPath("psig_uf_res.txt");
     QFile::remove(csv);
-    QFile::remove(db);
     QFile::remove(txt);
     vm.exportResultsToPath(csv);
-    vm.exportResultsToPath(db);
     vm.exportResultsToPath(txt);
     EXPECT_TRUE(QFileInfo::exists(csv));
-    EXPECT_TRUE(QFileInfo::exists(db));
     EXPECT_TRUE(QFileInfo::exists(txt));
     EXPECT_GT(QFileInfo(txt).size(), 0);
 
@@ -272,7 +274,6 @@ TEST(UserFlow, ScanThenEditAndExportResults) {
     EXPECT_EQ(resModel->rowCount(), before - 1);
 
     QFile::remove(csv);
-    QFile::remove(db);
     QFile::remove(txt);
 }
 

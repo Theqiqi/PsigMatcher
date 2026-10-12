@@ -18,7 +18,6 @@ public:
     QPlainTextEdit* templateEdit() const { return m_templateEdit; }
     QMenu* contextMenu() const { return m_contextMenu; }
     QAction* exportCsvAction() const { return m_exportCsvAction; }
-    QAction* exportDbAction() const { return m_exportDbAction; }
     QAction* exportTxtAction() const { return m_exportTxtAction; }
     QAction* selectColumnsAction() const { return m_selectColumnsAction; }
     QAction* deleteRowsAction() const { return m_deleteRowsAction; }
@@ -36,7 +35,6 @@ private:
     QMenu* m_contextMenu = nullptr;
     QMenu* m_exportMenu = nullptr;
     QAction* m_exportCsvAction = nullptr;
-    QAction* m_exportDbAction = nullptr;
     QAction* m_exportTxtAction = nullptr;
     QAction* m_selectColumnsAction = nullptr;
     QAction* m_deleteRowsAction = nullptr;

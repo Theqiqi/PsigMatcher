@@ -25,17 +25,6 @@ void MainViewModel::onExportResultsCsv() {
     exportResultsToPath(path);
 }
 
-void MainViewModel::onExportResultsDb() {
-    if (m_resultModel->rowCount() == 0) {
-        m_view->setTransientMessage(tr("无结果可导出"), true);
-        return;
-    }
-    const QString path = QFileDialog::getSaveFileName(m_view, tr("导出结果 DB"), QString(),
-                                                      tr("SQLite (*.db)"));
-    if (path.isEmpty()) return;
-    exportResultsToPath(path);
-}
-
 void MainViewModel::onExportResultsTxt() {
     if (m_resultModel->rowCount() == 0) {
         m_view->setTransientMessage(tr("无结果可导出"), true);
@@ -57,9 +46,7 @@ void MainViewModel::exportResultsToPath(const QString& path) {
     const psig::ResultExportOptions opt = exportOptions();
     std::string err;
     bool ok = false;
-    if (path.endsWith(".db", Qt::CaseInsensitive)) {
-        ok = psig::ExportResultsDb(path.toStdString(), results, err, opt);
-    } else if (path.endsWith(".txt", Qt::CaseInsensitive)) {
+    if (path.endsWith(".txt", Qt::CaseInsensitive)) {
         ok = psig::ExportResultsTxt(path.toStdString(), results, err, opt);
     } else {
         ok = psig::ExportResultsCsv(path.toStdString(), results, err, opt);
@@ -180,5 +167,7 @@ psig::ResultExportOptions MainViewModel::exportOptions() const {
     const std::vector<std::string> keys = psig::SelectResultKeys(o.columns);
     o.headers.reserve(keys.size());
     for (const auto& k : keys) o.headers.push_back(vmhelp::resultHeaderForKey(k).toStdString());
+    // C-03：TXT 摘要行随界面语言
+    o.summary = tr("匹配结果 (%1 条)").arg(m_resultModel->rowCount()).toStdString();
     return o;
 }

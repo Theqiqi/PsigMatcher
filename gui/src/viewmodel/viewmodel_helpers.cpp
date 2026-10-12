@@ -63,7 +63,7 @@ std::vector<std::pair<QString, QString>> resultColumnDefs() {
 }
 
 QString resultHeaderForKey(const std::string& key) {
-    if (key == "custom") return QStringLiteral("备注"); // 自定义列不随语言
+    if (key == "custom") return QObject::tr("备注"); // C-03：结果导出列头随语言（英文 Note）
     for (const auto& p : resultColumnDefs()) {
         if (p.first.toStdString() == key) return p.second;
     }

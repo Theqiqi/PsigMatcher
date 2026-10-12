@@ -51,14 +51,14 @@ TEST(ProcessTableModel, SetAndQuery) {
     EXPECT_EQ(m.processAt(1).name, QString("b.exe"));
 }
 
-// C-03：空名进程（PID 0/4 等）显示兜底名，而非空白
-TEST(ProcessTableModel, EmptyNameFallback) {
+// C-01：名称直接取 r.name（由 psig 提供，正常非空）；不再兜底「未知进程」
+TEST(ProcessTableModel, NameFromRowNoUnknownFallback) {
     ProcessTableModel m;
     m.setProcesses({{0, "", "", true}, {4, "", "", true}, {999, "", "", false}});
-    EXPECT_EQ(m.data(m.index(0, 1)).toString(), QString("系统空闲进程"));
-    EXPECT_EQ(m.data(m.index(1, 1)).toString(), QString("系统"));
-    EXPECT_EQ(m.data(m.index(2, 1)).toString(), QString("未知进程"));
-    // 有名进程不受影响
+    // 空名不再显示「系统空闲进程 / 系统 / 未知进程」
+    EXPECT_EQ(m.data(m.index(0, 1)).toString(), QString(""));
+    EXPECT_EQ(m.data(m.index(2, 1)).toString(), QString(""));
+    // 有名进程正常显示
     m.setProcesses({{1234, QStringLiteral("a.exe"), QStringLiteral("C:\\a.exe"), true}});
     EXPECT_EQ(m.data(m.index(0, 1)).toString(), QString("a.exe"));
 }

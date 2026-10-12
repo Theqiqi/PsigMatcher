@@ -8,6 +8,8 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
+#include "view/hoverrowdelegate.h"
+
 SignatureEditorPage::SignatureEditorPage(QWidget* parent) : QWidget(parent) {
     // 行操作统一收敛到表格右键菜单（不再使用按钮条）
     m_addRowAction = new QAction(this);
@@ -27,6 +29,7 @@ SignatureEditorPage::SignatureEditorPage(QWidget* parent) : QWidget(parent) {
     m_table->horizontalHeader()->setStretchLastSection(true);
     m_table->setAlternatingRowColors(true);
     m_table->setContextMenuPolicy(Qt::CustomContextMenu);
+    HoverRowDelegate::attach(m_table); // C-02：整行悬停高亮
 
     auto* layout = new QVBoxLayout(this);
     layout->addWidget(m_table);

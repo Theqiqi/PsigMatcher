@@ -217,8 +217,8 @@
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="389" />
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="421" />
-        <source>CSV (*.csv);;SQLite (*.db)</source>
-        <translation>CSV (*.csv);;SQLite (*.db)</translation>
+        <source>SQLite (*.db)</source>
+        <translation>SQLite (*.db)</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="395" />
@@ -227,8 +227,8 @@
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="395" />
-        <source>特征码表 (*.csv *.db);;CSV (*.csv);;SQLite (*.db)</source>
-        <translation>Signature Table (*.csv *.db);;CSV (*.csv);;SQLite (*.db)</translation>
+        <source>特征码表 (*.db)</source>
+        <translation>Signature Table (*.db)</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="409" />
@@ -384,6 +384,11 @@
         <translation>No results to export</translation>
     </message>
     <message>
+        <location filename="../../src/viewmodel/result.cpp" line="182" />
+        <source>匹配结果 (%1 条)</source>
+        <translation>Results (%1)</translation>
+    </message>
+    <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="632" />
         <source>导出结果 CSV</source>
         <translation>Export Results CSV</translation>
@@ -392,11 +397,6 @@
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="633" />
         <source>CSV (*.csv)</source>
         <translation>CSV (*.csv)</translation>
-    </message>
-    <message>
-        <location filename="../../src/viewmodel/mainviewmodel.cpp" line="643" />
-        <source>导出结果 DB</source>
-        <translation>Export Results DB</translation>
     </message>
     <message>
         <location filename="../../src/viewmodel/mainviewmodel.cpp" line="644" />
@@ -813,11 +813,6 @@ Qt version: %2</translation>
         <location filename="../../src/view/resultpage.cpp" line="61" />
         <source>导出 CSV</source>
         <translation>Export CSV</translation>
-    </message>
-    <message>
-        <location filename="../../src/view/resultpage.cpp" line="62" />
-        <source>导出 DB</source>
-        <translation>Export DB</translation>
     </message>
     <message>
         <location filename="../../src/view/resultpage.cpp" line="63" />

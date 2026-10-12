@@ -74,7 +74,6 @@ TEST(View, ResultPageContextMenuAndTemplate) {
     ResultPage page;
     ASSERT_NE(page.contextMenu(), nullptr);
     ASSERT_NE(page.exportCsvAction(), nullptr);
-    ASSERT_NE(page.exportDbAction(), nullptr);
     ASSERT_NE(page.exportTxtAction(), nullptr);
     ASSERT_NE(page.selectColumnsAction(), nullptr);
     ASSERT_NE(page.deleteRowsAction(), nullptr);

@@ -56,6 +56,7 @@ set(GUI_VIEW_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/columnmanagerdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/aboutdialog.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/view/exportcolumnsdialog.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/view/hoverrowdelegate.cpp
 )
 set(GUI_MODEL_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/model/signaturetablemodel.cpp

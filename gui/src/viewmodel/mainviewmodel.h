@@ -59,7 +59,6 @@ private slots:
     void onCancelScan();
     void onScanFinished();
     void onExportResultsCsv();
-    void onExportResultsDb();
     void onExportResultsTxt();
     void onClearResults();
     void onClearLog();
