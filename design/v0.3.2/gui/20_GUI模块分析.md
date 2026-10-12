@@ -9,7 +9,7 @@
 | --- | --- | --- | --- |
 | **Model** | `model/signaturetablemodel.{h,cpp}` | **无改动**（`setData` 已发 `dataChanged`，本版由 ViewModel 连接） | C-01（消费方在 VM） |
 | | `model/processtablemodel.*` / `resulttablemodel.*` / `types.h` | 无 | — |
-| **View** | `view/mainwindow.{h,cpp}` | 标题版本号；**新增公开方法 `quitAction()` 已在**（既有 getter）；无事件逻辑 | C-03（仅暴露 getter）、C-04 |
+| **View** | `view/mainwindow.{h,cpp}` | 标题版本号；**新增只读 getter `quitAction()`**（纯暴露、无逻辑）；无事件逻辑 | C-03、C-04 |
 | | `view/signatureeditorpage.*` / 其余页面与对话框 | 无 | — |
 | **ViewModel** | `viewmodel/bind.cpp` | **新增** `dataChanged → markSignatureDirty` 连接；**新增** `quitAction → close` 连接 | C-01、C-03 |
 | | `viewmodel/signature.cpp` | **修改** `onImportSignatures`（覆盖确认，去掉保存）；`askSaveSignatureChanges`（重命名+参数化） | C-02 |
