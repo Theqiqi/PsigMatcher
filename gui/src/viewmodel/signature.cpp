@@ -107,11 +107,34 @@ void MainViewModel::importSignaturesFromPath(const QString& path) {
         logTagged(QStringLiteral("error"), tr("导入失败: %1").arg(QString::fromStdString(err)));
         return;
     }
+    // C-05：库记录的目标进程名与当前目标不一致 → 提示（需决策），允许继续
+    const QString libProc = QString::fromStdString(table.targetProcess);
+    if (!libProc.isEmpty() && !m_targetName.isEmpty() && libProc != m_targetName) {
+        if (!confirmTargetProcessMismatch(libProc)) {
+            m_view->setTransientMessage(tr("已取消导入"));
+            logTagged(QStringLiteral("import"), tr("取消导入（进程不一致）"));
+            return;
+        }
+        logTagged(QStringLiteral("import"),
+                  tr("进程不一致已确认继续：库=%1 当前=%2").arg(libProc, m_targetName));
+    }
     applyTableToModel(table);
     m_sigDirty = false;               // C-04：导入后视为已保存
     refreshPersistentStatus();
     m_view->setTransientMessage(tr("已导入 %1 条").arg(table.rows.size()));
     logTagged(QStringLiteral("import"), tr("%1 条").arg(table.rows.size()));
+}
+
+// C-05：导入时库记录的目标进程名与当前目标不一致 → 弹窗（需决策）；返回 true 表示继续导入
+bool MainViewModel::confirmTargetProcessMismatch(const QString& libProc) {
+    QMessageBox box(m_view);
+    box.setWindowTitle(tr("进程不一致"));
+    box.setText(tr("该特征码库记录的目标进程为“%1”，当前目标进程为“%2”。是否仍要导入？")
+                    .arg(libProc, m_targetName));
+    QPushButton* contBtn = box.addButton(tr("继续导入"), QMessageBox::AcceptRole);
+    box.addButton(tr("取消"), QMessageBox::RejectRole);
+    box.exec();
+    return box.clickedButton() == contBtn;
 }
 
 void MainViewModel::onExportSignatures() {
@@ -139,6 +162,8 @@ void MainViewModel::exportSignaturesToPath(const QString& path) {
 
 psig::Table MainViewModel::tableFromModel() const {
     psig::Table t;
+    // C-05：库级携带当前目标进程名（无目标进程时为空串，psig 侧不写键）
+    t.targetProcess = m_targetName.toStdString();
     // C-06：内置列标题随语言（经 tr()）；自定义列沿用其标题（不随语言）
     for (const auto& c : m_sigModel->columns()) {
         psig::ColumnDef p;

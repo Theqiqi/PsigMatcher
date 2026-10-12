@@ -94,6 +94,7 @@ private:
     void logTagged(const QString& tag, const QString& message); // 追加带级别标签的日志
     void markSignatureDirty();                    // C-04：特征码表有未保存改动
     bool askSaveBeforeReselect();                 // C-04：重新选择进程前保存提示（false=取消切换）
+    bool confirmTargetProcessMismatch(const QString& libProc); // C-05：导入进程不一致提示（true=继续）
     std::vector<psig::Pattern> collectPatterns(std::string& err) const;
     std::vector<uint32_t> selectedPids() const;
     psig::Table tableFromModel() const;

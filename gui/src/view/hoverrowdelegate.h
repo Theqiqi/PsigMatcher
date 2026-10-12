@@ -3,18 +3,16 @@
 
 #include <QStyledItemDelegate>
 
-class QTableView;
+class HoverRowTableView;
 
-// 鼠标悬停时高亮整行（悬停色为选中色同色系、更淡）。
+// 悬停整行高亮：委托仅在自身单元格矩形内绘制悬停底色（淡色）。
+// 悬停行由 HoverRowTableView 提供（见 hoverrowtableview.h）。
 // 仅负责绘制：不发射信号、不修改 Model、不写日志。
 class HoverRowDelegate : public QStyledItemDelegate {
     Q_OBJECT
 public:
     explicit HoverRowDelegate(QObject* parent = nullptr);
 
-    // 在表格上启用整行悬停：setMouseTracking(true) + setItemDelegate(new HoverRowDelegate(view))
-    static void attach(QTableView* view);
-
-    void paint(QPainter* painter, const QStyleOptionViewItem& option,
-               const QModelIndex& index) const override;
+protected:
+    void initStyleOption(QStyleOptionViewItem* option, const QModelIndex& index) const override;
 };

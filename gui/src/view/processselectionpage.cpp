@@ -10,7 +10,7 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
-#include "view/hoverrowdelegate.h"
+#include "view/hoverrowtableview.h"
 
 ProcessSelectionPage::ProcessSelectionPage(QWidget* parent) : QWidget(parent) {
     m_filterEdit = new QLineEdit(this);
@@ -24,7 +24,7 @@ ProcessSelectionPage::ProcessSelectionPage(QWidget* parent) : QWidget(parent) {
     m_contextMenu->addAction(m_refreshAction);
     m_contextMenu->addAction(m_selectAllAction);
 
-    m_table = new QTableView(this);
+    m_table = new HoverRowTableView(this);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->horizontalHeader()->setStretchLastSection(true);
@@ -33,7 +33,7 @@ ProcessSelectionPage::ProcessSelectionPage(QWidget* parent) : QWidget(parent) {
     m_table->setSortingEnabled(true); // 点击列头排序
     m_table->horizontalHeader()->setSectionsClickable(true);
     m_table->setIconSize(QSize(16, 16));
-    HoverRowDelegate::attach(m_table); // C-02：整行悬停高亮
+    m_table->setCornerButtonEnabled(false); // C-04：禁用角落按钮，点击左上角空白不再全选
 
     // 筛选框置于列表底部
     auto* layout = new QVBoxLayout(this);

@@ -6,14 +6,17 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QHeaderView>
+#include <QImage>
 #include <QMenu>
 #include <QMenuBar>
 #include <QLabel>
 #include <QLayout>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMouseEvent>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QStandardItemModel>
 #include <QTableView>
 #include <QTableWidget>
 
@@ -24,6 +27,7 @@
 #include "view/aboutdialog.h"
 #include "view/columnmanagerdialog.h"
 #include "view/exportcolumnsdialog.h"
+#include "view/hoverrowtableview.h"
 #include "view/mainwindow.h"
 #include "view/processselectionpage.h"
 #include "view/resultpage.h"
@@ -293,5 +297,68 @@ TEST(View, LanguageMenuActions) {
     EXPECT_TRUE(w.languageEnAction()->isChecked());
     w.setLanguageChecked(QString());
     EXPECT_TRUE(w.languageSystemAction()->isChecked());
+}
+
+// C-04：进程页禁用角落按钮（点击左上角空白不再全选）
+TEST(View, ProcessPageCornerButtonDisabled) {
+    ProcessSelectionPage page;
+    EXPECT_FALSE(page.table()->isCornerButtonEnabled());
+    // 其余两页保留角落按钮
+    SignatureEditorPage sp;
+    EXPECT_TRUE(sp.table()->isCornerButtonEnabled());
+    ResultPage rp;
+    EXPECT_TRUE(rp.table()->isCornerButtonEnabled());
+}
+
+// C-01/C-02/C-03：整行悬停高亮——各单元格在自身矩形内绘制，不覆盖相邻列/不影响其他行
+TEST(View, HoverRowHighlightsWholeRowWithinCells) {
+    HoverRowTableView view;
+    QStandardItemModel model(3, 2); // 空单元格，便于按像素判断底色
+    view.setModel(&model);
+    view.setAlternatingRowColors(true);
+    view.resize(320, 200);
+    view.setStyleSheet(QStringLiteral(
+        "QTableView{background:#ffffff;alternate-background-color:#f4f7fb;"
+        "gridline-color:#e2e8f0;selection-background-color:#3a6ea5;selection-color:#ffffff;}"));
+    view.show();
+    QApplication::processEvents();
+
+    const QPoint vp = view.viewport()->pos();
+    const QColor hover(0xE8, 0xF0, 0xF8);
+    auto center = [&](int r, int c) {
+        return view.visualRect(model.index(r, c)).center() + vp;
+    };
+    auto moveTo = [&](const QPoint& p) {
+        QMouseEvent me(QEvent::MouseMove, QPointF(p), view.viewport()->mapToGlobal(p),
+                       Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+        QApplication::sendEvent(view.viewport(), &me);
+        QApplication::processEvents();
+    };
+    auto hoverAt = [&](int r, int c) { moveTo(view.visualRect(model.index(r, c)).center()); };
+
+    // 基线：鼠标移到所有行下方空白（hoveredRow = -1，无悬停）
+    const QPoint below(view.visualRect(model.index(2, 0)).center().x(),
+                       view.viewport()->height() - 3);
+    moveTo(below);
+    ASSERT_EQ(view.hoveredRow(), -1);
+    const QImage base = view.grab().toImage();
+    ASSERT_NE(base.pixelColor(center(1, 0)).rgb(), hover.rgb());
+
+    // 悬停到第 1 行
+    hoverAt(1, 0);
+    ASSERT_EQ(view.hoveredRow(), 1);
+    const QImage hov = view.grab().toImage();
+    // 悬停整行：列 0 与列 1 均为悬停色（各单元格各画自身矩形，不越界）
+    EXPECT_EQ(hov.pixelColor(center(1, 0)).rgb(), hover.rgb());
+    EXPECT_EQ(hov.pixelColor(center(1, 1)).rgb(), hover.rgb());
+    // 其他行不受影响（未悬停行像素与基线一致，未被越界覆盖）
+    EXPECT_EQ(hov.pixelColor(center(0, 0)).rgb(), base.pixelColor(center(0, 0)).rgb());
+    EXPECT_EQ(hov.pixelColor(center(2, 0)).rgb(), base.pixelColor(center(2, 0)).rgb());
+
+    // 鼠标移回行下方空白：悬停清空，第 1 行恢复
+    moveTo(below);
+    EXPECT_EQ(view.hoveredRow(), -1);
+    const QImage after = view.grab().toImage();
+    EXPECT_NE(after.pixelColor(center(1, 0)).rgb(), hover.rgb());
 }
 

@@ -9,7 +9,7 @@
 #include <QTableView>
 #include <QVBoxLayout>
 
-#include "view/hoverrowdelegate.h"
+#include "view/hoverrowtableview.h"
 
 ResultPage::ResultPage(QWidget* parent) : QWidget(parent) {
     m_templateEdit = new QPlainTextEdit(this);
@@ -34,13 +34,12 @@ ResultPage::ResultPage(QWidget* parent) : QWidget(parent) {
     m_contextMenu->addSeparator();
     m_contextMenu->addAction(m_clearAction);
 
-    m_table = new QTableView(this);
+    m_table = new HoverRowTableView(this);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->horizontalHeader()->setStretchLastSection(true);
     m_table->setAlternatingRowColors(true);
     m_table->setContextMenuPolicy(Qt::CustomContextMenu);
-    HoverRowDelegate::attach(m_table); // C-02：整行悬停高亮
     // 末列（自定义）可编辑；其余列由模型 flags 置为只读
 
     auto* layout = new QVBoxLayout(this);

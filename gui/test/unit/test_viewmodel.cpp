@@ -4,6 +4,8 @@
 #include <QAbstractButton>
 #include <QAction>
 #include <QApplication>
+#include <QDir>
+#include <QFile>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -13,6 +15,7 @@
 #include <QtTest/QtTest>
 
 #include "model/signaturetablemodel.h"
+#include "psig.h"
 #include "unit/test_app.h"
 #include "view/mainwindow.h"
 #include "view/processselectionpage.h"
@@ -229,4 +232,56 @@ TEST(ViewModel, ReselectPromptsSaveAndCancelAborts) {
     QTest::qWait(50);
     EXPECT_TRUE(w.signaturePage()->isVisible());   // 取消 → 未切回进程页
     EXPECT_FALSE(w.processPage()->isVisible());
+}
+
+// C-05：导入时库记录的目标进程名与当前目标不一致 → 弹窗；「取消」中止、「继续导入」应用
+TEST(ViewModel, ImportTargetProcessMismatchPrompts) {
+    MainWindow w;
+    w.show();
+    MainViewModel vm;
+    vm.install(&w);
+    WAIT_ENUM(w);
+    w.processPage()->table()->selectRow(0);
+    w.confirmProcessAction()->trigger();
+    QTest::qWait(30);
+
+    // 构造一个记录「不同目标进程名」的特征码库
+    psig::Table t;
+    psig::ColumnDef c;
+    c.key = "name";
+    c.title = "名称";
+    c.type = "text";
+    c.builtin = true;
+    t.columns = {c};
+    psig::TableRow row;
+    row.cells = {"sig-x"};
+    t.rows = {row};
+    t.targetProcess = "__psig_other_process__.exe";
+    const QString path = QDir::temp().filePath(QStringLiteral("psig_vm_mismatch.db"));
+    QFile::remove(path);
+    std::string err;
+    ASSERT_TRUE(psig::ExportSignaturesDb(path.toStdString(), t, err)) << err;
+
+    auto* model = w.signaturePage()->table()->model();
+    auto clickButton = [](const QString& text) {
+        for (QWidget* top : QApplication::topLevelWidgets()) {
+            auto* mb = qobject_cast<QMessageBox*>(top);
+            if (!mb) continue;
+            for (QAbstractButton* b : mb->buttons())
+                if (b->text() == text) { b->click(); return; }
+        }
+    };
+
+    // 取消 → 不导入
+    QTimer::singleShot(150, [clickButton]() { clickButton(QStringLiteral("取消")); });
+    vm.importSignaturesFromPath(path);
+    QTest::qWait(50);
+    EXPECT_EQ(model->rowCount(), 0);
+
+    // 继续导入 → 应用
+    QTimer::singleShot(150, [clickButton]() { clickButton(QStringLiteral("继续导入")); });
+    vm.importSignaturesFromPath(path);
+    QTest::qWait(50);
+    EXPECT_EQ(model->rowCount(), 1);
+    QFile::remove(path);
 }
