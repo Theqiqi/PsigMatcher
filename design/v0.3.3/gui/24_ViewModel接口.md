@@ -60,7 +60,7 @@ return app.exec();
 
 | 场景 | 策略 |
 | --- | --- |
-| 某尺寸 PNG 缺失（`.qrc` 漏项/路径错） | `QIcon::addFile` 不产生该帧 → 由单元测试 `View.WindowIconHasMultipleSizes` 断言 `availableSizes()` 捕获；不在运行期弹窗（属构建期问题） |
+| 某尺寸 PNG 缺失（`.qrc` 漏项/路径错） | `QIcon::addFile` 不产生该帧 → 由单元测试 `View.WindowIconHasAllSizes` 断言 `availableSizes()` 捕获；不在运行期弹窗（属构建期问题） |
 | PE 图标缺失 | 不产生运行期异常（Windows 显示默认图标）→ 由 `gui/script/verify/check_exe_icon.py` 在验证阶段以非零退出码报告 |
 | 跨线程异常 | 本版无新增线程/回调，不适用（既有后台异常经信号回主线程的机制未变） |
 

@@ -10,7 +10,7 @@
 | C-01 | **新增** | R-01：编译产物 `PsigMatcher.exe` 内嵌**多尺寸图标资源**（`RT_GROUP_ICON` + 7 个 `RT_ICON`：16/24/32/48/64/128/256）；Windows 资源管理器/任务栏固定项显示本程序图标而非通用 exe 图标 | 无窗口变化（外壳资源） | 资源 + 构建 |
 | C-01 | **修改** | R-02：主窗口图标（标题栏、任务栏、Alt-Tab）由**单尺寸 32×32** 升级为**多尺寸 `QIcon`**（16/24/32/48/64/128/256），高 DPI 下取原生尺寸不失真 | 主窗口（`MainWindow` 全局） | 资源 + 入口 |
 | C-01 | **新增** | R-03：图标资源**可复现**——由仓库内脚本 `gui/script/gen_app_icon.py` 生成；脚本可在无网络、无 Windows 的环境（WSL + Python3 + Pillow）下重建全部图标资源 | 无界面变化 | 工具脚本 |
-| C-01 | **修改** | R-04：图标视觉沿用既有识别（深蓝底 `#2A4A7A` + 亮蓝对角带 `#6FA8E0`，几何规则 `|u−v| ≤ 5/32`）；**32×32 帧与既有 `gui/res/app.png` 逐像素一致** | 无界面变化 | 资源 |
+| C-01 | **修改** | R-04：图标视觉沿用既有识别（深蓝底 `#2A4A7A` + 亮蓝对角带 `#6FA8E0`，几何规则 `|u−v| ≤ 5/32`）；**32×32 帧与既有 `gui/res/app.png` 逐像素一致**（该文件随之由 `app_32.png` 取代） | 无界面变化 | 资源 |
 | C-02 | **修改** | R-05：`README.md` 与仓库现状一致（程序正式名 `PsigMatcher`、版本号、产品结构、构建/测试/E2E 命令、许可证）；**不得包含未实测或已过期的命令/路径** | 无 | 仓库文档 |
 | C-03 | **新增** | R-06：仓库提供**中英双语** README——`README.md`（**英文，GitHub 默认显示**）与 `README.zh-CN.md`（简体中文）；两版**正文最前方**各有一行语言互链（`English | [简体中文](README.zh-CN.md)` 与 `[English](README.md) | 简体中文`） | 无 | 仓库文档 |
 | C-03 | **新增** | R-07：两版 README **章节结构一一对应**、内容等价；同一事实（版本号、命令、路径）在两版中一致 | 无 | 仓库文档 |
@@ -46,9 +46,9 @@
 | 需求 | 验收方式 |
 | --- | --- |
 | R-01 | 解析 PE 资源目录：存在 `RT_GROUP_ICON(14)`，其条目数 = 7，且 `RT_ICON(3)` 存在对应数量的资源（脚本 `gui/script/verify/check_exe_icon.py`，实测输出） |
-| R-02 | 单元测试 `View.WindowIconHasMultipleSizes` 断言 `QApplication::windowIcon().availableSizes()` 含全部 7 个尺寸 |
+| R-02 | 单元测试 `View.WindowIconHasAllSizes` 断言 `QApplication::windowIcon().availableSizes()` 含全部 7 个尺寸 |
 | R-03 | 重新运行 `python3 gui/script/gen_app_icon.py` 后 `git status` 无差异（生成物确定） |
-| R-04 | 校验脚本比对 `app.ico` 的 32×32 帧与 `gui/res/app.png`：逐像素一致（0 个差异像素） |
+| R-04 | 校验脚本比对 `app.ico` 的 32×32 帧与 `gui/res/app_32.png`：逐像素一致（0 个差异像素）；并实测 `app_32.png` 与 v0.3.2 的 `gui/res/app.png` 逐像素一致 |
 | R-05 | 逐条执行 README 中的构建/测试/E2E 命令并记录实测输出（见 `34_E2E测试结果.md`） |
 | R-06 | 两版首行互链存在且相对路径可解析（`git ls-files` 与链接目标一致） |
 | R-07 | 两版章节标题逐一对照（本文件 `05`/`34` 均给出对照记录） |

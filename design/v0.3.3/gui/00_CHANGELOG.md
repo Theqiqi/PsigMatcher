@@ -45,8 +45,8 @@
 | --- | --- |
 | 图标资源形式 | **PE 资源**：`app.ico`（多尺寸）+ `app.rc`（`IDI_APPICON ICON ...`），经 `enable_language(RC)` 由 MSVC `rc.exe` 编译进 exe |
 | 图标尺寸集合 | `16 / 24 / 32 / 48 / 64 / 128 / 256`（覆盖标题栏、任务栏、Alt-Tab、资源管理器大图标） |
-| 图标设计来源 | **沿用既有视觉识别**：`gui/res/app.png` 的深蓝底 + 亮蓝对角带（两色），按同一几何规则在各尺寸程序化重绘（32×32 与既有 `app.png` **逐像素一致**） |
-| 图标可复现性 | 新增生成脚本 `gui/script/gen_app_icon.py`（Python + Pillow），`app.ico`/`app.png` 均由脚本生成；脚本入库，二进制可重建 |
+| 图标设计来源 | **沿用既有视觉识别**：`gui/res/app.png`（v0.3.2 的单尺寸窗口图标）的深蓝底 + 亮蓝对角带（两色），按同一几何规则在各尺寸程序化重绘；32×32 帧与既有 `app.png` **逐像素一致**（实测差异像素 0） |
+| 图标可复现性 | 新增生成脚本 `gui/script/gen_app_icon.py`（Python + Pillow），`app.ico` 与 `app_<N>.png` 均由脚本生成；脚本入库，二进制可重建 |
 | 窗口图标 | 同步升级为**多尺寸 `QIcon`**（`app_16/24/32/48/64/128/256.png` 入 `.qrc`），使高 DPI 任务栏/Alt-Tab 图标清晰 |
 | 双语 README | **`README.md` = 英文版（默认显示）**，`README.zh-CN.md` = 简体中文版；两版**开头互相链接**（语言切换行） |
 | 版本号 | 界面标题随本版更新为 **v0.3.3**（既有约定：每版标题带版本号） |
@@ -54,15 +54,15 @@
 ## 交付结果（流程完成）
 
 - **代码/资源**：
-  - 新增 `gui/script/gen_app_icon.py`（图标生成，可复现）、`gui/res/app.ico`、`gui/res/app.rc`。
-  - `gui/res/app.png` 由脚本重新生成；`gui/res/resources.qrc` 收录 `app.png` 与 `app_<N>.png` 多尺寸集合。
+  - 新增 `gui/script/gen_app_icon.py`（图标生成，可复现）、`gui/res/app.ico`（7 帧）、`gui/res/app.rc`。
+  - 新增 `gui/res/app_<N>.png`（16/24/32/48/64/128/256）；原单尺寸 `gui/res/app.png` **删除**，由 `app_32.png`（逐像素一致）取代；`gui/res/resources.qrc` 收录 7 个多尺寸 PNG。
   - `gui/src/main.cpp`：窗口图标改为多尺寸 `QIcon`（逐个 `addFile`）。
   - `gui/src/CMakeLists.txt`：生产目标加入 `../res/app.rc`；`gui/CMakeLists.txt` 增加 `enable_language(RC)`。
   - 静态库：**无源码改动**；`psig/include/psig.h` 版本注释 → v0.3.3。
 - **文档**：`design/v0.3.3/gui/` 00–35（含 29–33 审查矩阵/结果、34 E2E 结果、35 编译环境与包管理）；`design/v0.3.3/gproto/00_CHANGELOG.md`（本版不改静态库）。
 - **仓库文档**：`README.md`（英文，默认）、`README.zh-CN.md`（简体中文），开头语言切换互相链接；同步 v0.3.2/v0.3.3 现状、图标说明与验证命令。
 - **测试**：
-  - 新增用例：单元 `View.WindowIconHasMultipleSizes`（多尺寸 QIcon）；图标资源脚本校验（PE 图标节 + 尺寸集合 + 32×32 与 `app.png` 逐像素一致）。
+  - 新增用例：单元 `View.WindowIconHasAllSizes`（7 尺寸资源存在 + `availableSizes()` + 每帧可解码）；验证脚本 `check_app_icon.py`（源侧三处尺寸集合同步 + 逐帧像素）与 `check_exe_icon.py`（PE 图标节 + 尺寸集合 + 逐帧字节一致 + Windows 外壳关联图标）；E2E 追加 E2E-09/E2E-10。
   - Debug/Release 编译通过；ctest 全量回归；E2E 全量回归（含标题 v0.3.3 与 exe 图标实测）。
 - **提交与标签**：每步一次英文提交；最终打 annotated tag `v0.3.3`。
 

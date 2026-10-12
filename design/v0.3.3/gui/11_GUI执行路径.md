@@ -18,10 +18,10 @@
 | 路径 | 步骤 | 期望结果 |
 | --- | --- | --- |
 | **正常** | ① `.qrc` 收录 7 个 `app_<N>.png` → ② `rcc` 生成资源 → ③ `main.cpp` 逐个 `QIcon::addFile` → ④ `setWindowIcon` → ⑤ `MainWindow::show()` | 标题栏/任务栏/Alt-Tab 显示原生尺寸图标，无放大模糊 |
-| **错误** | ①' `resources.qrc` 漏写某个尺寸 | 单元测试 `View.WindowIconHasMultipleSizes` 失败（`availableSizes()` 不含缺失尺寸） → 补齐 `.qrc` 后重跑 |
+| **错误** | ①' `resources.qrc` 漏写某个尺寸 | 单元测试 `View.WindowIconHasAllSizes` 失败（`availableSizes()` 不含缺失尺寸） → 补齐 `.qrc` 后重跑 |
 | **错误** | ③' 资源路径写错（如 `:/icons/app_16.png` 与实际不一致） | `QIcon::addFile` 返回空/该尺寸缺失，同上被单元测试捕获；`grep` 校验 `.qrc` 路径与代码一致 |
 | **错误** | ⑤' 某个 PNG 损坏 | `rcc` 编译失败或该帧缺失 → 由生成脚本重新生成（脚本幂等） |
-| **取消** | 放弃多尺寸、仅保留单尺寸 | 移除 `main.cpp` 中的多尺寸装配，回退到 `QIcon(":/app.png")`；PE 图标资源（EP-01）独立生效，不受影响 |
+| **取消** | 放弃多尺寸、仅保留单尺寸 | 回退 `main.cpp` 的装配为单个文件（如 `QIcon(":/app_32.png")`），并从 `.qrc` 移除多余尺寸；PE 图标资源（EP-01）独立生效，不受影响 |
 
 ## 三、EP-03 图标生成/校验（开发期脚本）
 

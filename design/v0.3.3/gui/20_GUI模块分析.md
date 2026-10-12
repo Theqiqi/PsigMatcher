@@ -30,7 +30,7 @@
 | 资源 | `gui/res/app.ico` | **新增**（生成物，7 帧） | C-01 |
 | 资源 | `gui/res/app.rc` | **新增**（`IDI_APPICON ICON "app.ico"`） | C-01 |
 | 资源 | `gui/res/app_<N>.png`（N=16,24,32,48,64,128,256） | **新增**（生成物） | C-01 |
-| 资源 | `gui/res/app.png` | **修改**（由生成脚本重新产出） | C-01 |
+| 资源 | `gui/res/app.png` | **删除**（单尺寸窗口图标；由 `app_32.png` 取代，逐像素一致） | C-01 |
 | 资源 | `gui/res/resources.qrc` | **修改**（收录多尺寸 PNG） | C-01 |
 | 入口 | `gui/src/main.cpp` | **修改**（多尺寸 `QIcon` 装配） | C-01 |
 | View | `gui/src/view/mainwindow.cpp` | **修改**（标题版本号 → v0.3.3，1 处字符串） | C-01/版本 |

@@ -32,19 +32,24 @@
 
 ## 四、双语 README 结构对照（R-07）
 
-两版**章节一一对应**（英文版为默认渲染）:
+两版**章节一一对应**（英文版为默认渲染）；实测两文件均为 **23 个标题行**（其中 7 个 `#` 行是代码块内的注释/命令），正文一级/二级章节 **12 节逐一对应**：
 
 | # | `README.md`（English） | `README.zh-CN.md`（简体中文） |
 | --- | --- | --- |
-| 0 | `English | [简体中文](README.zh-CN.md)` | `[English](README.md) | 简体中文` |
+| 0 | `**English** | [简体中文](README.zh-CN.md)` | `[English](README.md) | **简体中文**` |
 | 1 | Title + one-line description | 标题 + 一句话简介 |
-| 2 | Highlights / Features | 亮点 / 功能 |
+| 2 | Highlights | 亮点 |
 | 3 | Repository layout | 仓库结构 |
-| 4 | Build requirements | 构建环境要求 |
+| 4 | Requirements | 环境要求 |
 | 5 | Build & run | 构建与运行 |
-| 6 | Tests (unit / integration / E2E) | 测试（单元 / 集成 / E2E） |
-| 7 | Application icon（含生成脚本） | 程序图标（含生成脚本） |
-| 8 | License | 许可证 |
+| 6 | Tests | 测试 |
+| 7 | Application icon | 应用程序图标 |
+| 8 | Static library API | 静态库公共 API |
+| 9 | Design and process documents | 设计与流程文档 |
+| 10 | Project conventions | 项目约定 |
+| 11 | Version notes | 各版本要点 |
+| 12 | FAQ | 常见问题 |
+| 13 | License | 许可证 |
 
 ## 五、约束满足说明
 

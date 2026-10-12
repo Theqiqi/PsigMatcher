@@ -22,9 +22,9 @@
 
 | 条款 | 内容 |
 | --- | --- |
-| R-资源-1 | 图标二进制（`app.ico`、`app_<N>.png`、`app.png`）**只能由** `gui/script/gen_app_icon.py` 生成；禁止手工编辑或从外部下载替换 |
+| R-资源-1 | 图标二进制（`app.ico`、`app_<N>.png`）**只能由** `gui/script/gen_app_icon.py` 生成；禁止手工编辑或从外部下载替换 |
 | R-资源-2 | 生成必须是**确定性的**：同一次输入（脚本 + 参数）重复执行产出逐字节相同的文件 |
-| R-资源-3 | 新增/删除图标尺寸时，必须同步三处：生成脚本的尺寸集合、`gui/res/resources.qrc`、`gui/src/main.cpp` 的 `addFile` 尺寸循环 |
+| R-资源-3 | 新增/删除图标尺寸时，必须同步三处：生成脚本的尺寸集合、`gui/res/resources.qrc`、`gui/src/main.cpp` 的 `addFile` 尺寸循环；三处一致性由 `gui/script/verify/check_app_icon.py` 校验 |
 | R-资源-4 | `.rc` 只包含**资源声明**（`ICON`），不写 `VERSIONINFO` 等含版本号的块（避免版本号出现第二处维护点；版本号统一由 `main.cpp`/`mainwindow.cpp`/`psig.h` 承担） |
 | R-资源-5 | PE 图标只嵌入**生产目标**；测试目标不嵌入 |
 
