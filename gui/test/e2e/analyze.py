@@ -91,6 +91,7 @@ def main():
         "addrow": load(verify_dir, "shot_04_addrow.png"),
         "result": load(verify_dir, "shot_05_result.png"),
         "about": load(verify_dir, "shot_06_about.png"),
+        "close_prompt": load(verify_dir, "shot_07_close_prompt.png"),
     }
 
     # E2E-01 启动主界面（v0.2.1：启动即进程页；启动自动枚举进行中）
@@ -140,13 +141,20 @@ def main():
     else:
         rep.check("E2E-06 关于弹窗覆盖主窗口", False, "缺少截图")
 
-    # E2E-07 关闭程序退出码为 0
+    # E2E-07 关闭程序：有未保存改动 → 关闭保存提示覆盖在主窗口之上（画面变化）
+    if shots["close_prompt"] and shots["result"]:
+        d = diff_ratio(shots["close_prompt"], shots["result"])
+        rep.check("E2E-07 关闭保存提示覆盖主窗口", d > 0.002, f"diff={d:.5f}")
+    else:
+        rep.check("E2E-07 关闭保存提示覆盖主窗口", False, "缺少截图")
+
+    # E2E-08 关闭程序退出码为 0（提示中选「不保存」后正常退出）
     code_path = os.path.join(verify_dir, "exit_code.txt")
     if os.path.exists(code_path):
         code = open(code_path).read().strip()
-        rep.check("E2E-07 正常关闭退出码0", code == "0", f"exit_code={code}")
+        rep.check("E2E-08 正常关闭退出码0", code == "0", f"exit_code={code}")
     else:
-        rep.check("E2E-07 正常关闭退出码0", False, "缺少 exit_code.txt")
+        rep.check("E2E-08 正常关闭退出码0", False, "缺少 exit_code.txt")
 
     print(f"\n[analyze] 汇总: {rep.passed} passed, {rep.failed} failed")
     return 0 if rep.failed == 0 else 1

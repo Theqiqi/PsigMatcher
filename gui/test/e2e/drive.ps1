@@ -190,9 +190,16 @@ Start-Sleep -Milliseconds $StabilizeMs
 Press-Key $VK_ESCAPE
 Start-Sleep -Milliseconds $StabilizeMs
 
-# E2E-07 关闭程序 (WM_CLOSE)
+# E2E-07 关闭程序（未保存改动 → 关闭保存提示；选「不保存」后退出）
+# 前置已由 E2E-04 (Ctrl+N 增行) 产生未保存改动，故 WM_CLOSE 会弹出 [保存/不保存/取消] 模态提示。
 Write-Host "[drive] sending WM_CLOSE"
 [void][E2ENative]::PostMessage($hwnd, $WM_CLOSE, [IntPtr]::Zero, [IntPtr]::Zero)
+# 注意：此处不可再调 Force-Foreground（其会点击客户区中心，可能误触模态框按钮）——
+# 提示框由 WM_CLOSE 触发后已持有焦点，直接截屏并注入按键。
+Start-Sleep -Milliseconds 900
+[void](Capture-Client $hwnd (Join-Path $OutDir "shot_07_close_prompt.png"))
+# 用提示按钮的确定性键盘入口选「不保存」(Ctrl+D，见 design/v0.3.2/gui/05_GUI功能列表与窗口定义.md)
+Press-CtrlKey 0x44
 $exited = $proc.WaitForExit(8000)
 if (-not $exited) {
     Write-Host "[drive] process did not exit in time, killing"
