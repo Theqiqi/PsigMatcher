@@ -5,7 +5,9 @@
 #include <QActionGroup>
 #include <QComboBox>
 #include <QDialogButtonBox>
+#include <QFile>
 #include <QHeaderView>
+#include <QIcon>
 #include <QImage>
 #include <QMenu>
 #include <QMenuBar>
@@ -35,10 +37,34 @@
 
 PSIG_REGISTER_QT_ENV()
 
-// C-04：程序改名/版本——窗口标题为 v0.3.2（源语言中文）
+// 版本号——窗口标题为 v0.3.3（源语言中文）
 TEST(View, WindowTitleCarriesVersion) {
     MainWindow w;
-    EXPECT_EQ(w.windowTitle(), QString("进程特征码批量匹配器 v0.3.2"));
+    EXPECT_EQ(w.windowTitle(), QString("进程特征码批量匹配器 v0.3.3"));
+}
+
+// C-01：多尺寸程序图标——7 个尺寸的 PNG 资源均存在，且装配出的 QIcon 确实含全部原生尺寸
+// （与 main.cpp 的 buildAppIcon()/kAppIconSizes 同一资源路径与同一装配方式）
+TEST(View, WindowIconHasAllSizes) {
+    const int sizes[] = {16, 24, 32, 48, 64, 128, 256};
+    QIcon icon;
+    for (int size : sizes) {
+        const QString path = QStringLiteral(":/app_%1.png").arg(size);
+        EXPECT_TRUE(QFile::exists(path)) << path.toStdString() << " 资源缺失（检查 resources.qrc）";
+        icon.addFile(path, QSize(size, size));
+    }
+    const QList<QSize> available = icon.availableSizes();
+    EXPECT_EQ(available.size(), 7);
+    for (int size : sizes) {
+        EXPECT_TRUE(available.contains(QSize(size, size)))
+            << "QIcon 缺少尺寸 " << size;
+    }
+    // 每帧须能独立解码为非空图标（防资源损坏/路径错）
+    for (int size : sizes) {
+        const QPixmap pix = icon.pixmap(QSize(size, size));
+        EXPECT_FALSE(pix.isNull()) << "尺寸 " << size << " 无法解码";
+        EXPECT_EQ(pix.size(), QSize(size, size));
+    }
 }
 
 TEST(View, MainWindowGetters) {
