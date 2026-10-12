@@ -1,7 +1,7 @@
 # psig_gui E2E 测试用例清单
 
-- 版本：v0.2.2
-- 前置：`design/v0.2.2/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
+- 版本：v0.2.4
+- 前置：`design/v0.2.4/gui/11_GUI执行路径.md`、`12_用户流程.md`、`06_交互模式设计.md`、`05_GUI功能列表与窗口定义.md`、`08_窗口层次结构与导航图.md`
 - 产物对应：`drive.ps1`（驱动）、`analyze.py`（断言）、`verify_all.sh`（编排）
 - 说明：每个用例的操作步骤均对应真实可执行入口（菜单/工具栏/快捷键）；驱动脚本按步骤注入，断言脚本按预期断言，脚本与用例一一对应。
 
@@ -12,16 +12,28 @@
 - 截图：客户区（排除标题栏），保存至 `gui/out/verify/shot_xx.png`。
 - 快捷键入口：Ctrl+1/2/3 切页（视图菜单）、Ctrl+N 新增行、Ctrl+R 刷新进程、F5 扫描、Ctrl+M 列管理、Ctrl+O/Ctrl+S 导入/导出、F1 关于。
 
+## v0.2.4 变更点（相对 v0.2.3）
+
+- C-01：进程列表名称改为真实进程名（Toolhelp 快照名优先），**不再出现** `Unknown Process` / `未知进程`（在 `shot_01_start.png` / `shot_02_process_refreshed.png` 可见）。
+- C-02：三张表（进程/特征码/结果）鼠标悬停**整行**淡色高亮（选中色同色系更淡），单击选中仍为深色；不改变选中语义。
+- C-03：结果导出（CSV/TXT）表头与 TXT 摘要随界面语言（英文 UI → `Note`/`Results (N)`）。
+- C-04：特征码导出/导入**不再携带**结果页模板文本；导入不覆盖结果页模板。
+- C-05：特征码导入/导出仅 `.db`；结果导出仅 `.csv`/`.txt`（移除 `.db` 入口）。
+- 窗口标题更新为「进程特征码批量匹配器 v0.2.4」（默认跟随系统语言 → 英文显示 `Process Signature Batch Matcher v0.2.4`）。
+- 未新增 E2E 用例；上述改动点的非 E2E 部分由 GUI 单元测试 + psig 集成测试覆盖（详见 `design/v0.2.4/gui/29~33` 审查矩阵与 `design/v0.2.4/gproto/77_静态库完成契约.md`）。
+
+## v0.2.3 变更点（相对 v0.2.2）
+
+- ViewModel 单类多文件拆分（`mainviewmodel.{h,cpp}` + `bind/process/signature/scan/result/language.cpp`，去类名前缀）；psig api 层按职责拆分。均为内部结构，无界面行为变化。
+- 窗口标题更新为「进程特征码批量匹配器 v0.2.3」。
+
 ## v0.2.2 变更点（相对 v0.2.1）
 
-- C-03：进程列表中空名进程（如 PID 0/4 系统进程）显示兜底名 `System Idle Process` / `System` / `Unknown Process`（在 `shot_01_start.png` 可见）。
+- C-03：进程列表中空名进程（如 PID 0/4 系统进程）显示兜底名（该兜底已在 v0.2.4 由 C-01 移除）。
 - C-07：进程页列宽调整 — PID = 基准、Name = PID×2、Accessible = PID、Path 占剩余（仍可手动拖动）。
 - C-08：视图菜单新增「日志」开关（显隐 History Log dock）；「清空日志」改为仅在日志窗口右键菜单中。
 - C-09：仅对 `accessible==true` 的进程异步取图标；无权限进程不显示图标（不阻止选中）。
 - 窗口标题更新为「进程特征码批量匹配器 v0.2.2」（默认跟随系统语言 → 英文显示 `Process Signature Batch Matcher v0.2.2`）。
-- 未新增 E2E 用例；上述改动点的非 E2E 部分由 GUI 单元测试 + psig 集成测试覆盖（详见 `design/v0.2.2/gui/32_代码质量审查结果.md` 与 `design/v0.2.2/gproto/77_静态库完成契约.md`）。
-
-> 说明：语言切换（C-02）无独立快捷键，其正确性由单元测试（`ViewModel.ApplyLanguageSwitchesText`、`ViewModel.SignatureHeadersFollowLanguageExceptCustom`）与集成测试覆盖；E2E 侧重真实窗口渲染与流程联通。
 
 ## v0.2.1 变更点（相对 v0.2.0）
 
@@ -32,7 +44,7 @@
 - C-07：Release 版无控制台窗口（WIN32 子系统）；Debug 保留。
 - 窗口标题更新为「进程特征码批量匹配器 v0.2.1」。
 
-> 说明：语言切换（C-02）无独立快捷键，其正确性由单元测试（`ViewModel.ApplyLanguageSwitchesText`）与集成测试覆盖；E2E 侧重真实窗口渲染与流程联通。
+> 说明：语言切换（C-02）无独立快捷键，其正确性由单元测试（`ViewModel.ApplyLanguageSwitchesText`、`ViewModel.SignatureHeadersFollowLanguageExceptCustom`）与集成测试覆盖；E2E 侧重真实窗口渲染与流程联通。
 
 ---
 
@@ -44,7 +56,7 @@
   1. 启动 `psig_gui.exe`。
   2. 等待主窗口句柄就绪并置前。
   3. 截取客户区 → `shot_01_start.png`。
-- 预期结果：窗口标题为「进程特征码批量匹配器 v0.2.1」；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。
+- 预期结果：窗口标题为「进程特征码批量匹配器 v0.2.4」；客户区尺寸 ≥ 600×400；画面非黑屏（平均亮度 > 30）；含 UI 元素（非背景像素占比 > 2%）。
 
 ## E2E-02 进程表被填充（C-09 启动自动枚举 / Ctrl+R）
 
