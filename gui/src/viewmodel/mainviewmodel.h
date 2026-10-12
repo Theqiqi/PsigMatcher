@@ -23,6 +23,7 @@ class QTranslator;
 class QPoint;
 class QModelIndex;
 class QTimer;
+class QEvent;
 
 class MainViewModel : public QObject {
     Q_OBJECT
@@ -42,6 +43,12 @@ public:
     void setTemplateText(const QString& text);
     void setExportColumns(const QStringList& keys);
     QStringList exportColumns() const { return m_exportColumns; }
+    // C-01：特征码表是否有未保存改动（唯一来源，供状态刷新与测试查询）
+    bool isSignatureDirty() const { return m_sigDirty; }
+
+protected:
+    // C-03：拦截 View 的关闭请求（未保存改动时提示保存/不保存/取消）
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
     // 语言切换（"zh_CN" / "en_US" / ""（跟随系统））；供菜单与测试调用
     // feedback=false 时不产生瞬时/日志反馈（启动装载默认语言时使用）
@@ -92,8 +99,9 @@ private:
     void applyProcessIcon(uint32_t pid, const QIcon& icon);
     void refreshPersistentStatus();
     void logTagged(const QString& tag, const QString& message); // 追加带级别标签的日志
-    void markSignatureDirty();                    // C-04：特征码表有未保存改动
-    bool askSaveBeforeReselect();                 // C-04：重新选择进程前保存提示（false=取消切换）
+    void markSignatureDirty();                    // C-01：特征码表有未保存改动（并刷新持久状态）
+    // C-01/C-03：未保存保存提示（false=中止当前动作）。saveCancelAborts=另存为对话框取消时是否中止
+    bool askSaveSignatureChanges(bool saveCancelAborts);
     bool confirmTargetProcessMismatch(const QString& libProc); // C-05：导入进程不一致提示（true=继续）
     std::vector<psig::Pattern> collectPatterns(std::string& err) const;
     std::vector<uint32_t> selectedPids() const;
