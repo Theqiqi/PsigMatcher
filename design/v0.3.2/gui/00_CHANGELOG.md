@@ -47,7 +47,17 @@
 
 ## 交付结果（流程完成）
 
-- 见本目录 `01`–`33` 分析与审查文档、`34_E2E测试结果.md`，以及 `//gproto/00_CHANGELOG.md`。
+- **代码**：
+  - GUI View：`mainwindow.h` 新增 `quitAction()` getter（C-03）；`mainwindow.cpp` 标题 → v0.3.2。
+  - GUI ViewModel：`bind.cpp` 新增 `dataChanged→markSignatureDirty`（C-01）与 `quitAction→close`（C-03）两处 connect；`signature.cpp` 的 `onImportSignatures` 改为**仅覆盖确认**（C-02）、导出/导入成功后刷新持久状态；`process.cpp` 的 `askSaveBeforeReselect` → `askSaveSignatureChanges(bool)`（关闭与重选共用，C-01/C-03）；`mainviewmodel.{h,cpp}` 新增 `eventFilter`（关闭裁决）、`isSignatureDirty()`、未保存标记 `*`。
+  - 改名（C-04）：CMake 目标/`project()` → `PsigMatcher`、入口 `setApplicationName("PsigMatcher")`、i18n 资源名 → `PsigMatcher_{zh_CN,en_US}.ts`（装载路径同步）、测试 target → `psig_target`、校验/E2E 脚本与 `style.qss` 注释同步。
+  - 静态库：**无源码改动**；`psig/include/psig.h` 版本注释 → v0.3.2。
+- **文档**：`design/v0.3.2/gui/` 00–35（含 29–33 审查矩阵/结果、34 E2E 结果、35 编译环境与包管理）；`design/v0.3.2/gproto/00_CHANGELOG.md`（本版不改静态库）。
+- **测试**：
+  - 新增用例：`View.WindowTitleCarriesVersion`；`ViewModel.SignatureDirtyTracksRealEditsAndExportClearsIt`、`ViewModel.ImportPromptsOverwriteWithoutSaveOptions`、`ViewModel.ClosePromptsOnUnsavedChanges`、`ViewModel.ClosePromptButtonSet`；`UserFlow.UnsavedStateLifecycleWithRealFiles`。
+  - Debug：编译通过，ctest **5/5** 通过；Release：编译通过（`out/bin/Release/PsigMatcher.exe`），ctest **5/5** 通过。
+  - E2E：`verify_all.sh Release` **8/8 通过**；标题实测 `Process Signature Batch Matcher v0.3.2`；关闭保存提示实测弹出（diff=3.79%）后以 `Ctrl+D` 选「不保存」退出码 `0`。
+- **提交与标签**：每步一次英文提交；最终打 annotated tag `v0.3.2`。
 
 ## 版本目录说明
 
