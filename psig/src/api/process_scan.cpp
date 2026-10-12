@@ -123,6 +123,126 @@ struct RegionTask {
     size_t region = 0;
 };
 
+// 规划阶段：逐进程打开句柄、枚举名称/模块/可读区域
+std::vector<Plan> BuildPlans(const std::vector<uint32_t>& pids, const std::atomic_bool* cancel) {
+    std::vector<Plan> plans;
+    for (uint32_t pid : pids) {
+        if (IsCancelled(cancel)) break;
+        void* h = atomic::OpenForRead(pid);
+        if (!h) continue;
+        Plan plan;
+        plan.pid = pid;
+        plan.handle = h;
+        std::wstring pname, ppath;
+        atomic::ProcessNamePath(pid, pname, ppath);
+        plan.name = pname;
+        plan.modules = atomic::EnumModules(pid);
+        plan.regions = atomic::EnumRegions(h);
+        plans.push_back(std::move(plan));
+    }
+    return plans;
+}
+
+// 关闭全部计划句柄（成对释放）
+void ClosePlans(std::vector<Plan>& plans) {
+    for (auto& plan : plans) atomic::CloseProcessHandle(plan.handle);
+    plans.clear();
+}
+
+// 展平为区域任务列表（total = 任务数 = 总工作量）
+std::vector<RegionTask> FlattenTasks(const std::vector<Plan>& plans) {
+    std::vector<RegionTask> tasks;
+    for (size_t pi = 0; pi < plans.size(); ++pi) {
+        for (size_t ri = 0; ri < plans[pi].regions.size(); ++ri) tasks.push_back({pi, ri});
+    }
+    return tasks;
+}
+
+// 并行扫描作业（各线程共享只读输入与原子计数，结果写各自的局部向量）
+struct ScanJob {
+    const std::vector<Plan>& plans;
+    const std::vector<RegionTask>& tasks;
+    const std::vector<Pattern>& patterns;
+    size_t maxLen;
+    size_t limit;
+    const std::atomic_bool* cancel;
+    const ProgressCallback& progress;
+    size_t total;
+    std::atomic<size_t>& next;
+    std::atomic<size_t>& doneCount;
+    std::atomic<size_t>& hitsCount;
+    std::vector<std::vector<MatchResult>>& local;
+};
+
+// 工作线程：循环领取区域任务，扫描到局部结果，并汇报进度
+void RunWorker(ScanJob& job, size_t tid) {
+    std::vector<MatchResult>& out = job.local[tid];
+    for (;;) {
+        if (IsCancelled(job.cancel)) break;
+        const size_t j = job.next.fetch_add(1);
+        if (j >= job.total) break;
+        const RegionTask& t = job.tasks[j];
+        const Plan& plan = job.plans[t.plan];
+        const data::Region& region = plan.regions[t.region];
+        const size_t before = out.size();
+        ScanRegion(plan.handle, region, plan.pid, plan.name, plan.modules, job.patterns, job.maxLen,
+                   job.limit, job.cancel, out);
+        const size_t added = out.size() - before;
+        const size_t done = job.doneCount.fetch_add(1) + 1;
+        const size_t hits = job.hitsCount.fetch_add(added) + added;
+        if (job.progress) {
+            ScanProgress sp;
+            sp.currentPid = plan.pid;
+            sp.done = done;
+            sp.total = job.total;
+            sp.hits = hits;
+            job.progress(sp); // 可能被多线程并发调用（见公共头契约）
+        }
+    }
+}
+
+// 执行阶段：区域级并行（标准库线程 + 原子任务索引），返回合并后的结果
+std::vector<MatchResult> RunParallel(const std::vector<Plan>& plans,
+                                     const std::vector<RegionTask>& tasks,
+                                     const std::vector<Pattern>& patterns, size_t maxLen,
+                                     size_t limit, const std::atomic_bool* cancel,
+                                     const ProgressCallback& progress) {
+    const size_t total = tasks.size();
+    size_t threads = std::thread::hardware_concurrency();
+    if (threads == 0) threads = 1;
+    if (threads > total) threads = total;
+
+    std::atomic<size_t> next{0};
+    std::atomic<size_t> doneCount{0};
+    std::atomic<size_t> hitsCount{0};
+    std::vector<std::vector<MatchResult>> local(threads);
+    ScanJob job{plans, tasks, patterns, maxLen, limit, cancel, progress, total,
+                next, doneCount, hitsCount, local};
+
+    if (threads <= 1) {
+        RunWorker(job, 0);
+    } else {
+        std::vector<std::thread> pool;
+        pool.reserve(threads - 1);
+        for (size_t i = 1; i < threads; ++i) {
+            try {
+                pool.emplace_back([&job, i]() { RunWorker(job, i); });
+            } catch (...) {
+                break; // 线程创建失败：以更少线程继续（主线程仍参与）
+            }
+        }
+        RunWorker(job, 0); // 主线程也参与扫描
+        for (auto& th : pool) th.join();
+    }
+
+    std::vector<MatchResult> results;
+    for (auto& v : local) {
+        results.insert(results.end(), std::make_move_iterator(v.begin()),
+                       std::make_move_iterator(v.end()));
+    }
+    return results;
+}
+
 } // namespace
 
 std::vector<ProcessInfo> EnumerateProcesses() {
@@ -155,7 +275,6 @@ IconBitmap DefaultProcessIcon() {
 
 std::vector<MatchResult> ScanProcesses(const ScanRequest& req, ProgressCallback progress,
                                        const std::atomic_bool* cancel) {
-    // 1) 有效模式与最长模式长度
     std::vector<Pattern> patterns;
     for (const auto& p : req.patterns) {
         if (p.valid && !p.bytes.empty()) patterns.push_back(p);
@@ -163,95 +282,16 @@ std::vector<MatchResult> ScanProcesses(const ScanRequest& req, ProgressCallback 
     size_t maxLen = 0;
     for (const auto& p : patterns) maxLen = (std::max)(maxLen, p.bytes.size());
 
-    // 2) 规划阶段：逐进程打开句柄、枚举名称/模块/可读区域
-    std::vector<Plan> plans;
-    for (uint32_t pid : req.pids) {
-        if (IsCancelled(cancel)) break;
-        void* h = atomic::OpenForRead(pid);
-        if (!h) continue;
-        Plan plan;
-        plan.pid = pid;
-        plan.handle = h;
-        std::wstring pname, ppath;
-        atomic::ProcessNamePath(pid, pname, ppath);
-        plan.name = pname;
-        plan.modules = atomic::EnumModules(pid);
-        plan.regions = atomic::EnumRegions(h);
-        plans.push_back(std::move(plan));
+    std::vector<Plan> plans = BuildPlans(req.pids, cancel);
+    const std::vector<RegionTask> tasks = FlattenTasks(plans);
+    if (tasks.empty()) {
+        ClosePlans(plans);
+        return {};
     }
 
-    // 展平为区域任务；total = 总工作量（区域数）
-    std::vector<RegionTask> tasks;
-    for (size_t pi = 0; pi < plans.size(); ++pi) {
-        for (size_t ri = 0; ri < plans[pi].regions.size(); ++ri) tasks.push_back({pi, ri});
-    }
-    const size_t total = tasks.size();
-
-    std::vector<MatchResult> results;
-    if (total == 0) {
-        for (auto& plan : plans) atomic::CloseProcessHandle(plan.handle);
-        return results;
-    }
-
-    // 3) 执行阶段：区域级并行（标准库线程 + 原子任务索引）
-    size_t threads = std::thread::hardware_concurrency();
-    if (threads == 0) threads = 1;
-    if (threads > total) threads = total;
-    if (threads < 1) threads = 1;
-
-    std::atomic<size_t> next{0};
-    std::atomic<size_t> doneCount{0};
-    std::atomic<size_t> hitsCount{0};
-    std::vector<std::vector<MatchResult>> local(threads);
-
-    auto worker = [&](size_t tid) {
-        std::vector<MatchResult>& out = local[tid];
-        for (;;) {
-            if (IsCancelled(cancel)) break;
-            const size_t j = next.fetch_add(1);
-            if (j >= total) break;
-            const RegionTask& t = tasks[j];
-            const Plan& plan = plans[t.plan];
-            const data::Region& region = plan.regions[t.region];
-            const size_t before = out.size();
-            ScanRegion(plan.handle, region, plan.pid, plan.name, plan.modules, patterns, maxLen,
-                       req.maxResultsPerPattern, cancel, out);
-            const size_t added = out.size() - before;
-            const size_t done = doneCount.fetch_add(1) + 1;
-            const size_t hits = hitsCount.fetch_add(added) + added;
-            if (progress) {
-                ScanProgress sp;
-                sp.currentPid = plan.pid;
-                sp.done = done;
-                sp.total = total;
-                sp.hits = hits;
-                progress(sp); // 可能被多线程并发调用（见公共头契约）
-            }
-        }
-    };
-
-    if (threads == 1) {
-        worker(0);
-    } else {
-        std::vector<std::thread> pool;
-        pool.reserve(threads - 1);
-        for (size_t i = 1; i < threads; ++i) {
-            try {
-                pool.emplace_back(worker, i);
-            } catch (...) {
-                break; // 线程创建失败：以更少线程继续（主线程仍参与）
-            }
-        }
-        worker(0); // 主线程也参与扫描
-        for (auto& th : pool) th.join();
-    }
-
-    // 4) 汇合：按线程顺序拼接局部结果（顺序不保证与串行一致）
-    for (auto& v : local) {
-        results.insert(results.end(), std::make_move_iterator(v.begin()),
-                       std::make_move_iterator(v.end()));
-    }
-    for (auto& plan : plans) atomic::CloseProcessHandle(plan.handle);
+    std::vector<MatchResult> results =
+        RunParallel(plans, tasks, patterns, maxLen, req.maxResultsPerPattern, cancel, progress);
+    ClosePlans(plans);
     return results;
 }
 
