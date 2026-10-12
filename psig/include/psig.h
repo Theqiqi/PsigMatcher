@@ -1,5 +1,5 @@
 // psig.h - 公共 API（进程特征码批量匹配静态库）
-// 版本 v0.2.4
+// 版本 v0.3.0
 // 说明：本头文件是 psig 静态库唯一对外契约；GUI 只能经此公共 API 调用静态库能力。
 // 约束：静态库不依赖 Qt；所有公共 API 不抛异常，用返回值/出参表达错误；线程安全。
 #pragma once
@@ -88,14 +88,19 @@ struct ResultExportOptions {
 };
 
 // 扫描进度
+// done/total 以「工作量（内存区域数）」计：total = 目标进程可读区域总数，
+// done = 已完成区域数，随扫描单调递增，结束时 done == total。
 struct ScanProgress {
     uint32_t currentPid = 0;
-    size_t done = 0;    // 已处理模式数
-    size_t total = 0;   // 总模式数
+    size_t done = 0;    // 已完成工作量（区域数）
+    size_t total = 0;   // 总工作量（区域数）
     size_t hits = 0;    // 当前命中累计
 };
 
-// 进度回调（在后台线程触发；GUI 侧应经 QueuedConnection 回主线程）
+// 进度回调（在后台工作线程触发）。
+// 注意：扫描内部按内存区域并行，回调**可能被多个工作线程并发调用**，
+// 实现必须线程安全且轻量（例如仅写入 std::atomic）；不得直接操作界面。
+// GUI 侧建议：回调只写原子变量，由主线程定时器采样后刷新界面。
 using ProgressCallback = std::function<void(const ScanProgress&)>;
 
 // 扫描请求
@@ -122,7 +127,10 @@ IconBitmap DefaultProcessIcon();
 Pattern ParsePattern(const std::string& raw, const std::string& name);
 
 // 批量扫描：对 req.pids × req.patterns 做内存特征匹配
-// progress 可为空；cancel 可为空，非空时轮询取消
+// 实现按内存区域并行（多工作线程），并行度按可用 CPU 自适应；线程创建失败回落串行。
+// progress 可为空；cancel 可为空，非空时轮询取消。
+// 契约：progress 可能被多线程并发调用（见 ProgressCallback 说明）；
+//       返回结果顺序不保证与串行一致（命中集合的内容与数量不变）。
 std::vector<MatchResult> ScanProcesses(const ScanRequest& req,
                                        ProgressCallback progress = nullptr,
                                        const std::atomic_bool* cancel = nullptr);

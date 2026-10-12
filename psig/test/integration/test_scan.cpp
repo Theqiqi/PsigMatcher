@@ -1,8 +1,11 @@
 // test/integration/test_scan.cpp - 集成测试：真实进程内存扫描 + 数据交换
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <atomic>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -106,6 +109,60 @@ TEST(Integration, ScanSelfFindsMarker) {
         EXPECT_EQ(r.patternName, "self_marker");
         EXPECT_EQ(r.pid, GetCurrentProcessId());
     }
+}
+
+// R-01/R-03：进度反映真实工作量（每区域一次回调，done 覆盖 1..total）
+TEST(Integration, ScanProgressReportsRealWork) {
+    std::mutex mtx;
+    std::vector<size_t> dones;
+    std::atomic<size_t> totalSeen{0};
+    auto cb = [&](const psig::ScanProgress& sp) {
+        std::lock_guard<std::mutex> lk(mtx);
+        dones.push_back(sp.done);
+        totalSeen.store(sp.total);
+    };
+    psig::ScanRequest req;
+    req.pids = {GetCurrentProcessId()};
+    req.patterns = {psig::ParsePattern("DE AD BE EF 11 22 33 44", "self_marker")};
+    auto results = psig::ScanProcesses(req, cb, nullptr);
+
+    const size_t total = totalSeen.load();
+    EXPECT_GT(total, 1u); // 自身进程有多个可读区域
+    // 每区域一次回调（R-03）：回调次数 == total
+    ASSERT_EQ(dones.size(), total);
+    // done 覆盖 1..total（R-01：真实工作量、单调推进至 total）
+    std::sort(dones.begin(), dones.end());
+    for (size_t i = 0; i < total; ++i) EXPECT_EQ(dones[i], i + 1) << "i=" << i;
+    EXPECT_GE(results.size(), 1u);
+}
+
+// R-02：并行扫描稳定命中（多次运行均命中，结果归属正确）
+TEST(Integration, ScanParallelFindsMarkerBothRuns) {
+    psig::ScanRequest req;
+    req.pids = {GetCurrentProcessId()};
+    req.patterns = {psig::ParsePattern("DE AD BE EF 11 22 33 44", "self_marker")};
+    auto r1 = psig::ScanProcesses(req, nullptr, nullptr);
+    auto r2 = psig::ScanProcesses(req, nullptr, nullptr);
+    // 自身进程内存两次扫描期间会变化，故只断言「均命中且归属正确」，不断言计数相等
+    EXPECT_GE(r1.size(), 1u);
+    EXPECT_GE(r2.size(), 1u);
+    for (const auto& r : r1) {
+        EXPECT_EQ(r.patternName, "self_marker");
+        EXPECT_EQ(r.pid, GetCurrentProcessId());
+    }
+    for (const auto& r : r2) {
+        EXPECT_EQ(r.patternName, "self_marker");
+        EXPECT_EQ(r.pid, GetCurrentProcessId());
+    }
+}
+
+// 空请求：无目标进程 → 空结果、不崩溃
+TEST(Integration, ScanEmptyRequest) {
+    psig::ScanRequest req;
+    req.pids = {};
+    req.patterns = {psig::ParsePattern("DE AD BE EF", "x")};
+    auto results = psig::ScanProcesses(req, nullptr, nullptr);
+    EXPECT_TRUE(results.empty());
 }
 
 // 跨进程扫描：启动 psig_target.exe 并命中其 g_marker
